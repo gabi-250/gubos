@@ -23,9 +23,9 @@ _start:
     # Remember: at this point paging isn't enabled yet, so we need to subtract
     # 0xC0000000 from every memory access.
     lgdt tmp_gdt_descriptor - 0xC0000000
-    jmp $GDT_CODE_SEGMENT, $.Ltmp_gdt_done - 0xC0000000
+    jmp $TMP_GDT_CODE_SEGMENT, $.Ltmp_gdt_done - 0xC0000000
 .Ltmp_gdt_done:
-    mov $GDT_DATA_SEGMENT, %ax
+    mov $TMP_GDT_DATA_SEGMENT, %ax
     mov %ax, %ds
     mov %ax, %ss
     mov %ax, %es

@@ -1,8 +1,9 @@
 #include <stdint.h>
+#include "gdt.h"
 
 #define GDT_ENTRY_COUNT 5
 
-extern void load_gdt(uint32_t);
+extern void load_gdt(uint32_t, uint16_t, uint16_t);
 
 typedef struct segment_descriptor {
     // Bits 0-15 of the segment limit.
@@ -41,10 +42,10 @@ typedef struct gdt_descriptor {
     uint32_t base;
 } __attribute__((packed)) gdt_descriptor_t;
 
-segment_descriptor_t gdt_entries[GDT_ENTRY_COUNT];
+static segment_descriptor_t gdt_entries[GDT_ENTRY_COUNT];
 
 // A pointer to the 48-bit GDT structure (this needs to be passed to lgdt)
-gdt_descriptor_t gdt;
+static gdt_descriptor_t gdt;
 
 static void
 set_segment_descriptor(uint32_t i, uint32_t base, uint32_t limit,
@@ -82,5 +83,5 @@ init_gdt() {
     set_segment_descriptor(4, 0, 0xFFFFFFFF, 0xF2);
     gdt.base = (uint32_t)gdt_entries;
     gdt.limit = (sizeof(segment_descriptor_t) * GDT_ENTRY_COUNT) - 1;
-    load_gdt((uint32_t)&gdt);
+    load_gdt((uint32_t)&gdt, GDT_KERNEL_CODE_SEGMENT, GDT_KERNEL_DATA_SEGMENT);
 }
