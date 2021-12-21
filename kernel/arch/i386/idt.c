@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "printk.h"
+#include "gdt.h"
 
 #define IDT_TASK_GATE_FLAGS       0b00000101
 #define IDT_INT_GATE_FLAGS        0b00000110
@@ -11,10 +12,6 @@
 
 // The number of entries in the interrupt descriptor table
 #define IDT_GATE_DESCRIPTOR_COUNT 256
-
-extern void int_handler_0(void);
-extern uint8_t gdt_code_seg;
-extern uint16_t GDT_KERNEL_CODE_SEGMENT;
 
 // The IDT can contain 3 kinds of gate descriptors:
 // * task-gate: the same as the task gates used in the GDT/LDT
@@ -56,7 +53,7 @@ set_idt_gate(uint8_t vector, void *isr, uint8_t flags) {
     idt_gate_descriptor_t *gate = &idt_descriptors[vector];
 
     gate->addr_low = (uint32_t)isr & 0xffff;
-    gate->segment_selector = 8;
+    gate->segment_selector = GDT_KERNEL_CODE_SEGMENT;
     gate->flags = flags;
     gate->addr_high = ((uint32_t)isr >> 16) & 0xffff;
     gate->reserved = 0;
