@@ -18,6 +18,7 @@ stack_top:
 # The kernel entry point
 .global _start
 _start:
+    # Disable interrupts for now
     cli
     # Set up a temporary GDT
     # Remember: at this point paging isn't enabled yet, so we need to subtract
@@ -54,6 +55,8 @@ _higher_half:
     call init_gdt
     # Call the global constructors
     call _init
+    # Set up the IDT and enable interrupts
+    call init_idt
     call kernel_main
     # kernel_main should not return
     cli

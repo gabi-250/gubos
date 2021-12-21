@@ -3,14 +3,20 @@ BOOTDIR      := /boot
 INCLUDEDIR   := $(PREFIX)/include
 ARCHDIR      := arch/$(HOSTARCH)
 
-GUBOSINCLUDE := -Iinclude -I../libk/include -I$(ARCHDIR)/include -L=/usr/src/gubos/lib
-CFLAGS       := $(GUBOSINCLUDE) -O2 -g -D__is_kernel -ffreestanding -Wall -Wextra
-LIBS         := -nostdlib -lgcc -lk
-
-KERNEL_ARCH_CFLAGS  =
+KERNEL_ARCH_CFLAGS  = -mgeneral-regs-only
 KERNEL_ARCH_LDFLAGS =
 KERNEL_ARCH_LIBS    =
-KERNEL_ARCH_OBJS    = $(ARCHDIR)/gdtS.o $(ARCHDIR)/gdtc.o $(ARCHDIR)/boot.o $(ARCHDIR)/multiboot.o
+KERNEL_ARCH_OBJS    =\
+$(ARCHDIR)/gdtS.o\
+$(ARCHDIR)/gdtc.o\
+$(ARCHDIR)/flags.o\
+$(ARCHDIR)/idt.o\
+$(ARCHDIR)/boot.o\
+$(ARCHDIR)/multiboot.o\
+
+GUBOSINCLUDE := -Iinclude -I../libk/include -I$(ARCHDIR)/include -L=/usr/src/gubos/lib
+CFLAGS       := $(GUBOSINCLUDE) $(KERNEL_ARCH_CFLAGS) -O2 -g -D__is_kernel -ffreestanding -Wall -Wextra
+LIBS         := -nostdlib -lgcc -lk
 
 KERNEL_OBJS = $(KERNEL_ARCH_OBJS) kernel/kernel.o
 
