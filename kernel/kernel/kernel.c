@@ -13,7 +13,6 @@ __init_kernel() {
 void
 kernel_main() {
     printk("Interrupts enabled: %s\n", interrupts_enabled() ? "yes" : "no");
-    asm volatile ("int $49");
     printk("%%lld demo: %lld hello\n", 123456789000);
     for (int i = 0; i < 5; ++i) {
         printk("Hello, kernel world %d!\n", i);

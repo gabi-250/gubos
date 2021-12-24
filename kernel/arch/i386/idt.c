@@ -2,13 +2,9 @@
 #include <stdbool.h>
 #include "printk.h"
 #include "gdt.h"
-
-#define IDT_TASK_GATE_FLAGS       0b00000101
-#define IDT_INT_GATE_FLAGS        0b00000110
-#define IDT_TRAP_GATE_FLAGS       0b00000111
-#define IDT_KERNEL_DPL            0b00000000
-#define IDT_SEG_PRESENT           0b10000000
-#define IDT_32_BIT_GATE_SIZE      0b00001000
+#include "idt.h"
+#include "pic.h"
+#include "io.h"
 
 // The number of entries in the interrupt descriptor table
 #define IDT_GATE_DESCRIPTOR_COUNT 256
@@ -39,13 +35,52 @@ typedef struct idt_register {
     uint32_t base;
 } __attribute__((packed)) idt_register_t;
 
+typedef struct interrupt_state {
+    uint32_t eflags;
+    uint32_t cs;
+    uint32_t eip;
+} __attribute__((packed)) interrupt_state_t;
+
  __attribute__ ((aligned(8)))
 static idt_gate_descriptor_t idt_descriptors[IDT_GATE_DESCRIPTOR_COUNT];
 static idt_register_t idtr;
 
 __attribute__ ((interrupt)) void
-default_exception_handler(void *) {
-    printk("handling interrupt...\n");
+default_exception_handler(interrupt_state_t *state) {
+    printk("handling interrupt (eflags=%d, cs=%d, eip=%d)\n",
+            state-> eflags,
+            state->cs,
+            state->eip);
+}
+
+__attribute__ ((interrupt)) void
+default_exception_handler_with_err(interrupt_state_t *state, unsigned int err_code) {
+    printk("handling interrupt (eflags=%d, cs=%d, eip=%d, error=%d)\n",
+            state->eflags,
+            state->cs,
+            state->eip,
+            err_code);
+}
+
+__attribute__ ((interrupt)) void
+timer_irq_handler(interrupt_state_t *state) {
+    printk("handling timer interrupt (eflags=%d, cs=%d, eip=%d)\n",
+            state->eflags,
+            state->cs,
+            state->eip);
+    send_eoi(PIC_IRQ0);
+}
+
+__attribute__ ((interrupt)) void
+keyboard_irq_handler(interrupt_state_t *state) {
+    // XXX read the scan code
+    uint8_t scan_code = inb(0x60);
+    printk("handling keyboard interrupt: scan_code=%d (eflags=%d, cs=%d, eip=%d)\n",
+            scan_code,
+            state->eflags,
+            state->cs,
+            state->eip);
+    send_eoi(PIC_IRQ1);
 }
 
 void
@@ -60,20 +95,37 @@ set_idt_gate(uint8_t vector, void *isr, uint8_t flags) {
 }
 
 void
+init_hardware_interrupts() {
+    uint8_t flags = IDT_TRAP_GATE_FLAGS | IDT_SEG_PRESENT | IDT_KERNEL_DPL | IDT_32_BIT_GATE_SIZE;
+    // Interrupts 32 - 46 are hardware interrupts.
+    set_idt_gate(IDT_RESERVED_INT_COUNT, timer_irq_handler, flags);
+    set_idt_gate(IDT_RESERVED_INT_COUNT + 1, keyboard_irq_handler, flags);
+    init_pic();
+    pic_clear_mask(PIC_IRQ0);
+    pic_clear_mask(PIC_IRQ1);
+}
+
+void
 init_idt() {
     idtr.base = (uint32_t)&idt_descriptors;
     idtr.limit = sizeof(idt_gate_descriptor_t) * IDT_GATE_DESCRIPTOR_COUNT - 1;
-
+    // The entries in the 0-31 range are architecture-defined
+    // interrupts/exceptions
     uint8_t flags = IDT_TRAP_GATE_FLAGS | IDT_SEG_PRESENT | IDT_KERNEL_DPL | IDT_32_BIT_GATE_SIZE;
-    for (uint16_t i = 0; i < 32; ++i) {
-        set_idt_gate(i, default_exception_handler, flags);
+    for (uint16_t i = 0; i < IDT_RESERVED_INT_COUNT; ++i) {
+        if (IDT_INT_HAS_ERROR_CODE(i)) {
+            set_idt_gate(i, default_exception_handler_with_err, flags);
+        } else {
+            set_idt_gate(i, default_exception_handler, flags);
+        }
     }
-
+    init_hardware_interrupts();
     flags = IDT_INT_GATE_FLAGS | IDT_SEG_PRESENT | IDT_KERNEL_DPL | IDT_32_BIT_GATE_SIZE;
-    for (uint16_t i = 32; i < IDT_GATE_DESCRIPTOR_COUNT; ++i) {
+    // The rest are user-defined interrupts
+    for (uint16_t i = IDT_RESERVED_INT_COUNT + 2; i < IDT_GATE_DESCRIPTOR_COUNT; ++i) {
         set_idt_gate(i, default_exception_handler, flags);
     }
-    // load the IDT register and enable interrupts
+    // Load the IDT register and enable interrupts
     asm volatile("lidt %0\n\t"
                  "sti"
                  ::"memory"(idtr));

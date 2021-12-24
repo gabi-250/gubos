@@ -13,6 +13,8 @@ $(ARCHDIR)/flags.o\
 $(ARCHDIR)/idt.o\
 $(ARCHDIR)/boot.o\
 $(ARCHDIR)/multiboot.o\
+$(ARCHDIR)/io.o\
+$(ARCHDIR)/pic.o\
 
 GUBOSINCLUDE := -Iinclude -I../libk/include -I$(ARCHDIR)/include -L=/usr/src/gubos/lib
 CFLAGS       := $(GUBOSINCLUDE) $(KERNEL_ARCH_CFLAGS) -O2 -g -D__is_kernel -ffreestanding -Wall -Wextra
