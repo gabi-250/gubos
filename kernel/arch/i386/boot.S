@@ -58,6 +58,8 @@ _higher_half:
     # Set up the IDT and enable interrupts
     call init_idt
     call kernel_main
+    # Call the global destructors
+    call _fini
     # kernel_main should not return
     cli
 halt:

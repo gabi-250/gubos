@@ -30,6 +30,7 @@ init_pic() {
     // 8086/8088 mode).
     outb(PIC1_DATA, PIC_ICW4_X86);
     outb(PIC2_DATA, PIC_ICW4_X86);
+    // XXX is this really necessary?
     outb(PIC1_DATA, mask1);
     outb(PIC2_DATA, mask2);
     /*outb(PIC1_DATA, 0);*/

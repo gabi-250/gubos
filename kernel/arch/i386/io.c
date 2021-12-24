@@ -7,9 +7,7 @@
 void
 io_wait() {
     // Write some data to an unused port to introduce a small delay
-    for (int i = 0; i < 100000; ++i) {
-        asm volatile("outb %al, $0x80");
-    }
+    asm volatile("outb %al, $0x80");
 }
 
 uint8_t

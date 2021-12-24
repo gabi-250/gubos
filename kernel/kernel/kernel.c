@@ -10,11 +10,16 @@ __init_kernel() {
     printk("Kernel init complete\n");
 }
 
+__attribute__ ((destructor)) void
+__uninit_kernel() {
+    printk("Kernel returning\n");
+}
+
 void
 kernel_main() {
     printk("Interrupts enabled: %s\n", interrupts_enabled() ? "yes" : "no");
-    printk("%%lld demo: %lld hello\n", 123456789000);
-    for (int i = 0; i < 5; ++i) {
-        printk("Hello, kernel world %d!\n", i);
+    // loop forever waiting for the next interrupt
+    for(;;) {
+        asm volatile("hlt");
     }
 }
