@@ -3,10 +3,12 @@
 #include "tty.h"
 #include "printk.h"
 #include "flags.h"
+#include "ps2.h"
 
 __attribute__ ((constructor)) void
 __init_kernel() {
     init_tty();
+    init_ps2_devices();
     printk("Kernel init complete\n");
 }
 

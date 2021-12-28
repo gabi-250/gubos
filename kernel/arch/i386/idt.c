@@ -5,6 +5,7 @@
 #include "idt.h"
 #include "pic.h"
 #include "io.h"
+#include "ps2.h"
 
 // The number of entries in the interrupt descriptor table
 #define IDT_GATE_DESCRIPTOR_COUNT 256
@@ -63,24 +64,13 @@ default_exception_handler_with_err(interrupt_state_t *state, unsigned int err_co
 }
 
 __attribute__ ((interrupt)) void
-timer_irq_handler(interrupt_state_t *state) {
-    printk("handling timer interrupt (eflags=%d, cs=%d, eip=%d)\n",
-            state->eflags,
-            state->cs,
-            state->eip);
+timer_irq_handler(interrupt_state_t *) {
     send_eoi(PIC_IRQ0);
 }
 
 __attribute__ ((interrupt)) void
-keyboard_irq_handler(interrupt_state_t *state) {
-    // XXX read the scan code
-    uint8_t scan_code = inb(0x60);
-    printk("handling keyboard interrupt: scan_code=%d (eflags=%d, cs=%d, eip=%d)\n",
-            scan_code,
-            state->eflags,
-            state->cs,
-            state->eip);
-    send_eoi(PIC_IRQ1);
+keyboard_irq_handler(interrupt_state_t *) {
+    ps2_handle_irq1();
 }
 
 void
