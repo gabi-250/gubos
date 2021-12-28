@@ -4,7 +4,7 @@
 #include "gdt.h"
 #include "idt.h"
 #include "pic.h"
-#include "io.h"
+#include "portio.h"
 #include "ps2.h"
 
 // The number of entries in the interrupt descriptor table
@@ -65,7 +65,7 @@ default_exception_handler_with_err(interrupt_state_t *state, unsigned int err_co
 
 __attribute__ ((interrupt)) void
 timer_irq_handler(interrupt_state_t *) {
-    send_eoi(PIC_IRQ0);
+    pic_send_eoi(PIC_IRQ0);
 }
 
 __attribute__ ((interrupt)) void
@@ -73,7 +73,7 @@ keyboard_irq_handler(interrupt_state_t *) {
     ps2_handle_irq1();
 }
 
-void
+static void
 set_idt_gate(uint8_t vector, void *isr, uint8_t flags) {
     idt_gate_descriptor_t *gate = &idt_descriptors[vector];
 
@@ -84,19 +84,19 @@ set_idt_gate(uint8_t vector, void *isr, uint8_t flags) {
     gate->reserved = 0;
 }
 
-void
+static void
 init_hardware_interrupts() {
     uint8_t flags = IDT_TRAP_GATE_FLAGS | IDT_SEG_PRESENT | IDT_KERNEL_DPL | IDT_32_BIT_GATE_SIZE;
     // Interrupts 32 - 46 are hardware interrupts.
     set_idt_gate(IDT_RESERVED_INT_COUNT, timer_irq_handler, flags);
     set_idt_gate(IDT_RESERVED_INT_COUNT + 1, keyboard_irq_handler, flags);
-    init_pic();
+    pic_init();
     pic_clear_mask(PIC_IRQ0);
     pic_clear_mask(PIC_IRQ1);
 }
 
 void
-init_idt() {
+idt_init() {
     idtr.base = (uint32_t)&idt_descriptors;
     idtr.limit = sizeof(idt_gate_descriptor_t) * IDT_GATE_DESCRIPTOR_COUNT - 1;
     // The entries in the 0-31 range are architecture-defined

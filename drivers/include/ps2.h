@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "idt.h"
 
 // ======================================================================
 // I/O ports
@@ -72,6 +71,6 @@ bool ps2_controller_output_buffer_full();
 void ps2_controller_send_cmd(uint8_t);
 void ps2_keyboard_send_cmd(uint8_t);
 void ps2_handle_irq1();
-void init_ps2_devices();
+void ps2_init_devices();
 
 #endif /* __PS2_H__ */

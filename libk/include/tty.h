@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-void init_tty(void);
+void tty_init(void);
 void tty_puts(const char *, size_t);
 
 #endif /* __TTY_H__ */

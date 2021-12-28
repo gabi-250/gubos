@@ -1,5 +1,5 @@
 GUBOS                  := gubos.bin
-PROJECTS               := libc libk kernel
+PROJECTS               := libc libk drivers kernel
 SYSTEM_HEADER_PROJECTS := libc libk kernel
 HOST                   := i686-elf
 HOSTARCH               := i386

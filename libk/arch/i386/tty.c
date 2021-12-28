@@ -43,7 +43,7 @@ tty_adjust_indices() {
 }
 
 void
-init_tty() {
+tty_init() {
     tty_row = 0;
     tty_column = 0;
     // grey text on a beautiful blue background

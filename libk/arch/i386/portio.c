@@ -1,8 +1,5 @@
-#ifndef __KIO_H__
-#define __KIO_H__
-
 #include <stdint.h>
-#include "io.h"
+#include "portio.h"
 
 void
 io_wait() {
@@ -22,5 +19,3 @@ outb(uint16_t port, uint8_t value) {
     asm volatile("outb %0, %1" :: "a"(value), "Nd"(port));
     io_wait();
 }
-
-#endif /* __KIO_H__ */

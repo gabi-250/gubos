@@ -7,8 +7,8 @@
 
 __attribute__ ((constructor)) void
 __init_kernel() {
-    init_tty();
-    init_ps2_devices();
+    tty_init();
+    ps2_init_devices();
     printk("Kernel init complete\n");
 }
 

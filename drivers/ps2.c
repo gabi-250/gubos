@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "ps2.h"
-#include "io.h"
+#include "portio.h"
 #include "pic.h"
 #include "printk.h"
 
@@ -117,11 +117,11 @@ ps2_handle_irq1() {
     for (int i = 0; i < PS2_SCANCODE_QUEUE_SIZE; ++i) {
         printk("%d: %d\n", i, scancode_queue_ctx.buf[i]);
     }
-    send_eoi(PIC_IRQ1);
+    pic_send_eoi(PIC_IRQ1);
 }
 
 void
-init_ps2_devices() {
+ps2_init_devices() {
     // XXX: check if the PS/2 controller exists (see the "IA PC Boot
     // Architecture Flags" field of the FADT).
     init_scancode_queue();

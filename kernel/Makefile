@@ -1,29 +1,31 @@
-PREFIX       := /usr/local
-BOOTDIR      := /boot
-INCLUDEDIR   := $(PREFIX)/include
-ARCHDIR      := arch/$(HOSTARCH)
+PREFIX                := /usr/local
+BOOTDIR               := /boot
+INCLUDEDIR            := $(PREFIX)/include
+ARCHDIR               := arch/$(HOSTARCH)
+KERNEL_ARCH_CFLAGS    := -mgeneral-regs-only
+KERNEL_ARCH_LDFLAGS   :=
+KERNEL_ARCH_LIBS      :=
+LIBS                  := -nostdlib -lgcc -ldrivers -lk
+CFLAGS                = $(GUBOSINCLUDE) $(KERNEL_ARCH_CFLAGS) -O2 -g -D__is_kernel -ffreestanding -Wall -Wextra
 
-KERNEL_ARCH_CFLAGS  = -mgeneral-regs-only
-KERNEL_ARCH_LDFLAGS =
-KERNEL_ARCH_LIBS    =
-KERNEL_ARCH_OBJS    =\
+GUBOSINCLUDE :=\
+-Iinclude\
+-I../libk/include\
+-I../drivers/include\
+-I$(ARCHDIR)/include\
+-L=/usr/src/gubos/lib\
+
+KERNEL_ARCH_OBJS :=\
 $(ARCHDIR)/gdtS.o\
 $(ARCHDIR)/gdtc.o\
 $(ARCHDIR)/flags.o\
 $(ARCHDIR)/idt.o\
 $(ARCHDIR)/boot.o\
 $(ARCHDIR)/multiboot.o\
-$(ARCHDIR)/io.o\
-$(ARCHDIR)/pic.o\
-$(ARCHDIR)/ps2.o\
 
-GUBOSINCLUDE := -Iinclude -I../libk/include -I$(ARCHDIR)/include -L=/usr/src/gubos/lib
-CFLAGS       := $(GUBOSINCLUDE) $(KERNEL_ARCH_CFLAGS) -O2 -g -D__is_kernel -ffreestanding -Wall -Wextra
-LIBS         := -nostdlib -lgcc -lk
+KERNEL_OBJS = $(KERNEL_ARCH_OBJS) kernel.o
 
-KERNEL_OBJS = $(KERNEL_ARCH_OBJS) kernel/kernel.o
-
-OBJS=\
+OBJS =\
 $(ARCHDIR)/crti.o \
 $(ARCHDIR)/crtbegin.o \
 $(KERNEL_OBJS) \

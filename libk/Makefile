@@ -13,10 +13,10 @@ ARCHDIR=arch/$(HOSTARCH)
 CFLAGS:=$(CFLAGS) $(ARCH_CFLAGS)
 
 OBJS=\
-$(ARCH_OBJS) \
 $(ARCHDIR)/tty.o \
 $(ARCHDIR)/printk.o \
 $(ARCHDIR)/string.o \
+$(ARCHDIR)/portio.o \
 
 LIBK_OBJS=$(OBJS:.o=.libk.o)
 

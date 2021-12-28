@@ -1,9 +1,9 @@
 #include <stdint.h>
 #include "pic.h"
-#include "io.h"
+#include "portio.h"
 
 void
-init_pic() {
+pic_init() {
     uint8_t mask1 = inb(PIC1_DATA);
     uint8_t mask2 = inb(PIC2_DATA);
     // Send ICW1...
@@ -38,7 +38,7 @@ init_pic() {
 }
 
 void
-send_eoi(uint8_t irq) {
+pic_send_eoi(uint8_t irq) {
     if(irq >= 8) {
         outb(PIC2_CONTROL, PIC_OCW2_EOI);
     }

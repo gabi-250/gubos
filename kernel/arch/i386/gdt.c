@@ -70,7 +70,7 @@ set_segment_descriptor(uint32_t i, uint32_t base, uint32_t limit,
 }
 
 void
-init_gdt() {
+gdt_init() {
     // The NULL segment
     set_segment_descriptor(0, 0, 0, 0);
     // The kernel code descriptor

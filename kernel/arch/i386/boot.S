@@ -52,11 +52,11 @@ _higher_half:
     invlpg 0
     movl $stack_top, %esp
     # Now that we've enabled paging, call some C code to sets up the real GDT
-    call init_gdt
+    call gdt_init
     # Call the global constructors
     call _init
     # Set up the IDT and enable interrupts
-    call init_idt
+    call idt_init
     call kernel_main
     # Call the global destructors
     call _fini

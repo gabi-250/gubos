@@ -20,8 +20,8 @@
 #define PIC_IRQ0      0
 #define PIC_IRQ1      1
 
-void init_pic();
-void send_eoi(uint8_t);
+void pic_init();
+void pic_send_eoi(uint8_t);
 void pic_clear_mask(uint8_t);
 
 #endif /* __PIC_H__ */

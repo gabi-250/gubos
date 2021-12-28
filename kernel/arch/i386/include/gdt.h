@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// These must be kept in sync with the init_gdt logic
+// These must be kept in sync with the gdt_init logic
 #define GDT_KERNEL_CODE_SEGMENT 0x8
 #define GDT_KERNEL_DATA_SEGMENT 0x10
 #define GDT_USER_CODE_SEGMENT 0x18
