@@ -21,7 +21,8 @@ $(ARCHDIR)/gdtc.o\
 $(ARCHDIR)/flags.o\
 $(ARCHDIR)/idt.o\
 $(ARCHDIR)/boot.o\
-$(ARCHDIR)/multiboot.o\
+$(ARCHDIR)/multiboot2_header.o\
+$(ARCHDIR)/multiboot2.o\
 
 KERNEL_OBJS = $(KERNEL_ARCH_OBJS) kernel.o
 

@@ -20,6 +20,15 @@ stack_top:
 _start:
     # Disable interrupts for now
     cli
+    lea stack_top - 0xC0000000, %esp
+    # Save EBX: GRUB puts the physical address of the multiboot2 information
+    # structure into EBX before invoking the OS (we add 0xC0000000 to get its
+    # virtual address).
+    add $0xC0000000, %ebx
+    push %ebx
+    # Save EAX, which contains a magic value that tells the kernel the bootloader
+    # is multiboot2-compliant.
+    push %eax
     # Set up a temporary GDT
     # Remember: at this point paging isn't enabled yet, so we need to subtract
     # 0xC0000000 from every memory access.
@@ -32,7 +41,10 @@ _start:
     mov %ax, %es
     mov %ax, %fs
     mov %ax, %gs
-    movl $stack_top, %esp
+    # update the stack pointer, keeping in mind that we already pushed two
+    # values to the stack
+    mov $stack_top, %esp
+    sub $8, %esp
     # Read current CR4 and set the PSE bit to enable 4MB pages
     mov %cr4, %ebx
     or $0x00000010, %ebx
@@ -50,7 +62,6 @@ _higher_half:
     # The identity mapping isn't needed anymore at this point
     movl $0, (page_directory)
     invlpg 0
-    movl $stack_top, %esp
     # Now that we've enabled paging, call some C code to sets up the real GDT
     call gdt_init
     # Call the global constructors
