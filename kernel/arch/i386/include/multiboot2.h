@@ -414,9 +414,18 @@ struct multiboot_tag_load_base_addr
   multiboot_uint32_t load_base_addr;
 };
 
+struct multiboot_info
+{
+  multiboot_uint32_t magic;
+  multiboot_uint32_t addr;
+};
+
+typedef struct multiboot_info multiboot_info_t;
+
 #endif /*  ! ASM_FILE */
 
 void multiboot_print_info(uint32_t);
 void multiboot_print_memory_map(struct multiboot_tag *, multiboot_memory_map_t *);
+uint32_t multiboot_get_first_module(uint32_t);
 
 #endif /*  ! MULTIBOOT_HEADER */

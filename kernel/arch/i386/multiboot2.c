@@ -39,6 +39,18 @@ multiboot_print_info(uint32_t multiboot_info) {
             default:
                 break;
         }
-       tag = (struct multiboot_tag *)((multiboot_uint8_t *) tag + ((tag->size + 7) & ~7));
+        tag = (struct multiboot_tag *)((multiboot_uint8_t *) tag + ((tag->size + 7) & ~7));
     }
+}
+
+uint32_t
+multiboot_get_first_module(uint32_t multiboot_info) {
+    struct multiboot_tag *tag = (struct multiboot_tag *) (multiboot_info + 8);
+    while (tag->type != MULTIBOOT_TAG_TYPE_END) {
+        if (tag->type == MULTIBOOT_TAG_TYPE_MODULE) {
+            return ((struct multiboot_tag_module *) tag)->mod_start;
+        }
+        tag = (struct multiboot_tag *)((multiboot_uint8_t *) tag + ((tag->size + 7) & ~7));
+    }
+    return 0;
 }

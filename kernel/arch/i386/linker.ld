@@ -5,8 +5,8 @@ SECTIONS
     /* We want a higher-half kernel, which will live at 3GB + 1MB */
     . = 0xC0100000;
 
-    __kernel_virtual_base = .;
-    __kernel_physical_base = . - 0xC0000000;
+    __kernel_virtual_start = .;
+    __kernel_physical_start = . - 0xC0000000;
 
     .text ALIGN(4K): AT(ADDR(.text) - 0xC0000000)
     {

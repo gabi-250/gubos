@@ -20,4 +20,5 @@ mkdir -p build/boot/grub
 
 cp sysroot/boot/gubos.kernel build/boot/gubos.kernel
 cp grub/grub.cfg build/boot/grub/grub.cfg
+cp -r grub/modules build/boot/grub/modules
 grub-mkrescue -o gubos.bin build

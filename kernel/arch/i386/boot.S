@@ -68,6 +68,10 @@ _higher_half:
     call _init
     # Set up the IDT and enable interrupts
     call idt_init
+    push $__kernel_virtual_end
+    push $__kernel_virtual_start
+    push $__kernel_physical_end
+    push $__kernel_physical_start
     call kernel_main
     # Call the global destructors
     call _fini
