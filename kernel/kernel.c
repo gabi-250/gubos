@@ -14,17 +14,18 @@ __init_kernel() {
 
 __attribute__ ((destructor)) void
 __uninit_kernel() {
-    printk("Fatal error: kernel returned.\n");
+    printk_err("Fatal error: kernel returned.\n");
 }
 
 void
 kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     if (multiboot_magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
-        printk("Invalid multiboot2 magic number: %d\n", multiboot_magic);
+        printk_err("Invalid multiboot2 magic number: %d\n", multiboot_magic);
         return;
     }
     multiboot_print_info(multiboot_info);
-    printk("Interrupts enabled: %s\n", interrupts_enabled() ? "yes" : "no");
+    printk_info("Interrupts enabled: %s\n", interrupts_enabled() ? "yes" : "no");
+
     // loop forever waiting for the next interrupt
     for(;;) {
         asm volatile("hlt");

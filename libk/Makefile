@@ -1,18 +1,20 @@
-CFLAGS?=-O2 -g
+CFLAGS?=-O0 -g
 LDFLAGS?=
 
 PREFIX := /usr/src/gubos
 INCLUDEDIR := $(PREFIX)/include
 LIBDIR := $(PREFIX)/lib
 
-CFLAGS:=$(CFLAGS) -ffreestanding -Wall -Wextra -Iinclude
-LIBK_CFLAGS:=$(CFLAGS) -D__is_libk
+CFLAGS:=$(CFLAGS) -ffreestanding -Wall -Wextra -Werror -Iinclude -lgcc
+LIBK_CFLAGS:=$(CFLAGS) -D__is_libk $(LDFLAGS)
 
 ARCHDIR=arch/$(HOSTARCH)
 
 CFLAGS:=$(CFLAGS) $(ARCH_CFLAGS)
 
 OBJS=\
+itoa.o \
+vga.o \
 $(ARCHDIR)/tty.o \
 $(ARCHDIR)/printk.o \
 $(ARCHDIR)/string.o \

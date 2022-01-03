@@ -6,7 +6,7 @@ GUBOSINCLUDE          :=\
 -Iinclude\
 -I../libk/include\
 
-CFLAGS               := -O2 -g -ffreestanding -Wall -Wextra $(GUBOSINCLUDE)
+CFLAGS               := -O2 -g -ffreestanding -Wall -Wextra -Werror $(GUBOSINCLUDE)
 LIBDRIVERS_CFLAGS    := $(CFLAGS)
 OBJS                 := pic.o ps2.o
 LIBDRIVERS_OBJS      := $(OBJS:.o=.libdrivers.o)

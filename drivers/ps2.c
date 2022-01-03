@@ -23,7 +23,7 @@ ps2_controller_wait_ready_for_cmd() {
     // PS/2 controller misbehaves.
     while (ps2_controller_input_buffer_full()) {
         // busy loop until the controller is ready to accept the command
-        printk("PS/2 controller not ready");
+        printk_warn("PS/2 controller not ready");
     }
 }
 
@@ -58,12 +58,11 @@ ps2_controller_configure() {
 static void
 ps2_controller_self_test(uint8_t ps2_controller_config) {
     ps2_controller_send_cmd(PS2_CMD_CTRL_SELF_TEST);
-    printk("PS/2 controller self-test: ");
     uint8_t err;
     if ((err = inb(PS2_DATA)) != PS2_CTRL_SELF_TEST_OK) {
-        printk("failed (err=%d)\n", err);
+        printk_warn("PS/2 controller self-test: failed (err=%d)\n", err);
     } else {
-        printk("OK\n");
+        printk_info("PS/2 controller self-test: OK\n");
     }
     // Restore the configuration, just in case the self-test caused it to reset.
     outb(PS2_DATA, ps2_controller_config);
@@ -71,17 +70,16 @@ ps2_controller_self_test(uint8_t ps2_controller_config) {
 
 static void
 ps2_interface_self_test() {
-    printk("PS/2 keyboard self-test: ");
     ps2_controller_send_cmd(PS2_CMD_PORT1_SELF_TEST);
     uint8_t err = inb(PS2_DATA);
     while ((err = inb(PS2_DATA)) == PS2_PORT1_RESEND) {
         ps2_controller_send_cmd(PS2_CMD_PORT1_SELF_TEST);
-        printk("failed (err=%d)\n", err);
+        printk_warn("PS/2 keyboard self-test: failed (err=%d)\n", err);
     }
     if (err != PS2_PORT1_SELF_TEST_OK) {
-        printk("failed (err=%d)\n", err);
+        printk_warn("PS/2 keyboard self-test: failed (err=%d)\n", err);
     } else {
-        printk("OK\n");
+        printk_info("PS/2 keyboard self-test: OK\n");
     }
 }
 
@@ -115,7 +113,7 @@ ps2_handle_irq1() {
     scancode_queue_ctx.buf[scancode_queue_ctx.end] = scancode;
     scancode_queue_ctx.end = (scancode_queue_ctx.end + 1) % PS2_SCANCODE_QUEUE_SIZE;
     for (int i = 0; i < PS2_SCANCODE_QUEUE_SIZE; ++i) {
-        printk("%d: %d\n", i, scancode_queue_ctx.buf[i]);
+        printk_debug("%d: %d\n", i, scancode_queue_ctx.buf[i]);
     }
     pic_send_eoi(PIC_IRQ1);
 }

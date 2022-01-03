@@ -4,26 +4,24 @@
 
 void
 multiboot_print_memory_map(struct multiboot_tag *tag, multiboot_memory_map_t *mmap) {
-    printk("Memory map:\n");
+    printk_debug("Memory map:\n");
     while ((multiboot_uint8_t *) mmap < (multiboot_uint8_t *) tag + tag->size) {
-        printk("    address: %lld\n", mmap->addr);
-        printk("    length: %lld\n", mmap->len);
-        printk("    type: ");
+        printk_debug("    address: %#llx | length: %llu | type: ", mmap->addr, mmap-> len);
         switch (mmap->type) {
             case MULTIBOOT_MEMORY_AVAILABLE:
-                printk("available\n");
+                printk_debug("available\n");
                 break;
             case MULTIBOOT_MEMORY_RESERVED:
-                printk("reserved\n");
+                printk_debug("reserved\n");
                 break;
             case MULTIBOOT_MEMORY_ACPI_RECLAIMABLE:
-                printk("ACPI reclaimable\n");
+                printk_debug("ACPI reclaimable\n");
                 break;
             case MULTIBOOT_MEMORY_NVS:
-                printk("NVS\n");
+                printk_debug("NVS\n");
                 break;
             case MULTIBOOT_MEMORY_BADRAM:
-                printk("bad RAM\n");
+                printk_debug("bad RAM\n");
                 break;
         }
         mmap = (multiboot_memory_map_t *)((unsigned long) mmap + ((struct multiboot_tag_mmap *) tag)->entry_size);

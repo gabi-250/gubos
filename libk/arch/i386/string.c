@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include "string.h"
 
 size_t
@@ -22,4 +23,28 @@ strrev(char *s) {
         --i;
     }
     return s;
+}
+
+char *
+strupper(char *s) {
+    for (size_t i = 0; i < strlen(s); ++i) {
+        if (islower(s[i])) {
+            s[i] = toupper(s[i]);
+        }
+    }
+    return s;
+}
+
+bool
+islower(char c) {
+    return c >= 'a' && c <= 'z';
+}
+
+char
+toupper(char c) {
+    if (islower(c)) {
+        return c + ('A' - 'a');
+    } else {
+        return c;
+    }
 }

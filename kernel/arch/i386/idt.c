@@ -48,7 +48,7 @@ static idt_register_t idtr;
 
 __attribute__ ((interrupt)) void
 default_exception_handler(interrupt_state_t *state) {
-    printk("handling interrupt (eflags=%d, cs=%d, eip=%d)\n",
+    printk_debug("handling interrupt (eflags=%d, cs=%d, eip=%d)\n",
             state-> eflags,
             state->cs,
             state->eip);
@@ -56,7 +56,16 @@ default_exception_handler(interrupt_state_t *state) {
 
 __attribute__ ((interrupt)) void
 default_exception_handler_with_err(interrupt_state_t *state, unsigned int err_code) {
-    printk("handling interrupt (eflags=%d, cs=%d, eip=%d, error=%d)\n",
+    printk_debug("handling interrupt (eflags=%d, cs=%d, eip=%d, error=%d)\n",
+            state->eflags,
+            state->cs,
+            state->eip,
+            err_code);
+}
+
+__attribute__ ((interrupt)) void
+page_fault_exception_handler(interrupt_state_t *state, unsigned int err_code) {
+    printk_warn("handling page fault (eflags=%d, cs=%d, eip=%d, error=%d)\n",
             state->eflags,
             state->cs,
             state->eip,
@@ -102,13 +111,21 @@ idt_init() {
     // The entries in the 0-31 range are architecture-defined
     // interrupts/exceptions
     uint8_t flags = IDT_TRAP_GATE_FLAGS | IDT_SEG_PRESENT | IDT_KERNEL_DPL | IDT_32_BIT_GATE_SIZE;
-    for (uint16_t i = 0; i < IDT_RESERVED_INT_COUNT; ++i) {
+    for (uint16_t i = 0; i < IDT_PAGE_FAULT_EXCEPTION; ++i) {
         if (IDT_INT_HAS_ERROR_CODE(i)) {
             set_idt_gate(i, default_exception_handler_with_err, flags);
         } else {
             set_idt_gate(i, default_exception_handler, flags);
         }
     }
+    for (uint16_t i = IDT_X87_FPU_FLOATING_POINT_ERROR; i < IDT_RESERVED_INT_COUNT; ++i) {
+        if (IDT_INT_HAS_ERROR_CODE(i)) {
+            set_idt_gate(i, default_exception_handler_with_err, flags);
+        } else {
+            set_idt_gate(i, default_exception_handler, flags);
+        }
+    }
+    set_idt_gate(IDT_PAGE_FAULT_EXCEPTION, page_fault_exception_handler, flags);
     init_hardware_interrupts();
     flags = IDT_INT_GATE_FLAGS | IDT_SEG_PRESENT | IDT_KERNEL_DPL | IDT_32_BIT_GATE_SIZE;
     // The rest are user-defined interrupts

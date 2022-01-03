@@ -5,8 +5,9 @@ ARCHDIR               := arch/$(HOSTARCH)
 KERNEL_ARCH_CFLAGS    := -mgeneral-regs-only
 KERNEL_ARCH_LDFLAGS   :=
 KERNEL_ARCH_LIBS      :=
-LIBS                  := -nostdlib -lgcc -ldrivers -lk
-CFLAGS                = $(GUBOSINCLUDE) $(KERNEL_ARCH_CFLAGS) -O2 -g -D__is_kernel -ffreestanding -Wall -Wextra
+LIBS                  := -ldrivers -lk -nostdlib -lgcc
+CFLAGS                = $(GUBOSINCLUDE) $(KERNEL_ARCH_CFLAGS) -O0 -g -D__is_kernel -ffreestanding -Wall -Wextra -Werror
+LDFLAGS               =
 
 GUBOSINCLUDE :=\
 -Iinclude\
