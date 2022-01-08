@@ -24,6 +24,7 @@ $(ARCHDIR)/idt.o\
 $(ARCHDIR)/boot.o\
 $(ARCHDIR)/multiboot2_header.o\
 $(ARCHDIR)/multiboot2.o\
+$(ARCHDIR)/mm/pmm.o\
 
 KERNEL_OBJS = $(KERNEL_ARCH_OBJS) kernel.o
 

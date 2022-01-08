@@ -6,6 +6,7 @@
 #include "printk.h"
 #include "flags.h"
 #include "ps2.h"
+#include "mm/pmm.h"
 
 __attribute__ ((constructor)) void
 __init_kernel() {
@@ -26,6 +27,7 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     }
     multiboot_print_info(multiboot_info.addr);
     printk_debug("Interrupts enabled: %s\n", interrupts_enabled() ? "yes" : "no");
+    pmm_init(meminfo, multiboot_info);
 
     uint32_t module_addr;
     if ((module_addr = multiboot_get_first_module(multiboot_info.addr)) == 0) {
