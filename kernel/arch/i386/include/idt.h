@@ -1,6 +1,8 @@
 #ifndef __IDT_H__
 #define __IDT_H__
 
+#include <stdint.h>
+
 // Some constants to help with setting up the flags for each interrupt gate.
 #define IDT_TASK_GATE_FLAGS                0b00000101
 #define IDT_INT_GATE_FLAGS                 0b00000110
@@ -42,5 +44,11 @@
      || X == IDT_PAGE_FAULT_EXCEPTION \
      || X == IDT_ALIGNMENT_CHECK_EXCEPTION \
      || X == IDT_CONTROL_PROTECTION_EXCEPTION)
+
+typedef struct interrupt_state {
+    uint32_t eflags;
+    uint32_t cs;
+    uint32_t eip;
+} __attribute__((packed)) interrupt_state_t;
 
 #endif /* __IDT_H__ */

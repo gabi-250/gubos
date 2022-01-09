@@ -21,6 +21,7 @@ $(ARCHDIR)/gdtS.o\
 $(ARCHDIR)/gdtc.o\
 $(ARCHDIR)/flags.o\
 $(ARCHDIR)/idt.o\
+$(ARCHDIR)/paging.o\
 $(ARCHDIR)/boot.o\
 $(ARCHDIR)/multiboot2_header.o\
 $(ARCHDIR)/multiboot2.o\

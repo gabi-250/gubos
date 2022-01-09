@@ -6,6 +6,7 @@
 #include "pic.h"
 #include "portio.h"
 #include "ps2.h"
+#include "paging.h"
 
 // The number of entries in the interrupt descriptor table
 #define IDT_GATE_DESCRIPTOR_COUNT 256
@@ -36,19 +37,13 @@ typedef struct idt_register {
     uint32_t base;
 } __attribute__((packed)) idt_register_t;
 
-typedef struct interrupt_state {
-    uint32_t eflags;
-    uint32_t cs;
-    uint32_t eip;
-} __attribute__((packed)) interrupt_state_t;
-
  __attribute__ ((aligned(8)))
 static idt_gate_descriptor_t idt_descriptors[IDT_GATE_DESCRIPTOR_COUNT];
 static idt_register_t idtr;
 
 __attribute__ ((interrupt)) void
 default_exception_handler(interrupt_state_t *state) {
-    printk_debug("handling interrupt (eflags=%d, cs=%d, eip=%d)\n",
+    printk_debug("handling interrupt (eflags=%#x, cs=%d, eip=%d)\n",
             state-> eflags,
             state->cs,
             state->eip);
@@ -56,7 +51,7 @@ default_exception_handler(interrupt_state_t *state) {
 
 __attribute__ ((interrupt)) void
 default_exception_handler_with_err(interrupt_state_t *state, unsigned int err_code) {
-    printk_debug("handling interrupt (eflags=%d, cs=%d, eip=%d, error=%d)\n",
+    printk_debug("handling interrupt (eflags=%#x, cs=%d, eip=%d, error=%d)\n",
             state->eflags,
             state->cs,
             state->eip,
@@ -65,11 +60,7 @@ default_exception_handler_with_err(interrupt_state_t *state, unsigned int err_co
 
 __attribute__ ((interrupt)) void
 page_fault_exception_handler(interrupt_state_t *state, unsigned int err_code) {
-    printk_warn("handling page fault (eflags=%d, cs=%d, eip=%d, error=%d)\n",
-            state->eflags,
-            state->cs,
-            state->eip,
-            err_code);
+    paging_handle_fault(state, err_code);
 }
 
 __attribute__ ((interrupt)) void
