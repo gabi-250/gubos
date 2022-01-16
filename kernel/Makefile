@@ -17,15 +17,17 @@ GUBOSINCLUDE :=\
 -L=/usr/src/gubos/lib\
 
 KERNEL_ARCH_OBJS :=\
+$(ARCHDIR)/page_directory.o\
 $(ARCHDIR)/gdtS.o\
 $(ARCHDIR)/gdtc.o\
 $(ARCHDIR)/flags.o\
-$(ARCHDIR)/idt.o\
-$(ARCHDIR)/paging.o\
+$(ARCHDIR)/interrupts/idt.o\
+$(ARCHDIR)/interrupts/page_fault.o\
 $(ARCHDIR)/boot.o\
 $(ARCHDIR)/multiboot2_header.o\
 $(ARCHDIR)/multiboot2.o\
 $(ARCHDIR)/mm/pmm.o\
+$(ARCHDIR)/mm/vmm.o\
 
 KERNEL_OBJS = $(KERNEL_ARCH_OBJS) kernel.o
 

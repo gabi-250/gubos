@@ -39,6 +39,10 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     printk_debug("kernel virtual end %#x\n", meminfo.virtual_end);
     printk_debug("kernel physical start %#x\n", meminfo.physical_start);
     printk_debug("kernel physical end %#x\n", meminfo.physical_end);
+    // Trigger some page faults.
+    *((char *)0xc0400000) = 10;
+    *((char *)0xc0800000) = 10;
+
     // loop forever waiting for the next interrupt
     for(;;) {
         asm volatile("hlt");

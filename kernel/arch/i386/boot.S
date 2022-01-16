@@ -8,7 +8,6 @@ stack_top:
 
 .section .data
 # The page tables
-.include "./arch/i386/include/page_directory.inc"
 # A temporary GDT to replace the one set up by GRUB (only needed until paging is
 # enabled, because once we have paging, the GDT setup can more easily be handled in
 # C land).

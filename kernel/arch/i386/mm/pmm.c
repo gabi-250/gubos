@@ -1,14 +1,13 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "mm/pmm.h"
+#include "mm/vmm.h"
 #include "multiboot2.h"
 #include "kernel_meminfo.h"
 
 // ((1 << 32) / (1 << 25))
 // NOTE: each bit represents one 4M page.
 #define MEM_BITMAP_SIZE (1 << 7)
-// 4M pages
-#define PAGE_SIZE (1 << 22)
 #define BITMAP_ENTRY_MASK UINT8_MAX
 
 static uint8_t MEM_BITMAP[MEM_BITMAP_SIZE];

@@ -2,11 +2,11 @@
 #include <stdbool.h>
 #include "printk.h"
 #include "gdt.h"
-#include "idt.h"
+#include "interrupts/idt.h"
+#include "interrupts/page_fault.h"
 #include "pic.h"
 #include "portio.h"
 #include "ps2.h"
-#include "paging.h"
 
 // The number of entries in the interrupt descriptor table
 #define IDT_GATE_DESCRIPTOR_COUNT 256
@@ -50,7 +50,7 @@ default_exception_handler(interrupt_state_t *state) {
 }
 
 __attribute__ ((interrupt)) void
-default_exception_handler_with_err(interrupt_state_t *state, unsigned int err_code) {
+default_exception_handler_with_err(interrupt_state_t *state, uint32_t err_code) {
     printk_debug("handling interrupt (eflags=%#x, cs=%d, eip=%d, error=%d)\n",
             state->eflags,
             state->cs,
@@ -59,7 +59,7 @@ default_exception_handler_with_err(interrupt_state_t *state, unsigned int err_co
 }
 
 __attribute__ ((interrupt)) void
-page_fault_exception_handler(interrupt_state_t *state, unsigned int err_code) {
+page_fault_exception_handler(interrupt_state_t *state, uint32_t err_code) {
     paging_handle_fault(state, err_code);
 }
 

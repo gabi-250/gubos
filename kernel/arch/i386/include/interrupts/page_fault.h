@@ -1,6 +1,7 @@
-#ifndef __PAGING_H__
-#define __PAGING_H__
+#ifndef __PAGE_FAULT_H__
+#define __PAGE_FAULT_H__
 
+#include <stdint.h>
 #include "idt.h"
 
 // ======================================================================
@@ -28,6 +29,6 @@
 // Violation of SGX access control.
 #define PAGING_ERR_CODE_SGX  (1 << 15)
 
-void paging_handle_fault(interrupt_state_t *, unsigned int);
+void paging_handle_fault(interrupt_state_t *, uint32_t);
 
-#endif /* __PAGING_H__ */
+#endif /* __PAGE_FAULT_H__ */
