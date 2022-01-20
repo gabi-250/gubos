@@ -27,5 +27,5 @@ paging_handle_fault(interrupt_state_t * state, uint32_t err_code) {
             state->cs,
             state->eip);
     // XXX map the address for now.
-    vmm_map_addr((void *) addr, PAGE_FLAG_WRITE | PAGE_FLAG_PRESENT);
+    vmm_map_addr((void *) addr, PAGE_FLAG_WRITE);
 }

@@ -29,7 +29,7 @@ $(ARCHDIR)/multiboot2.o\
 $(ARCHDIR)/mm/pmm.o\
 $(ARCHDIR)/mm/vmm.o\
 
-KERNEL_OBJS = $(KERNEL_ARCH_OBJS) kernel.o
+KERNEL_OBJS = $(KERNEL_ARCH_OBJS) kernel.o kmalloc.o
 
 OBJS =\
 $(ARCHDIR)/crti.o \

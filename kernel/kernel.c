@@ -7,6 +7,7 @@
 #include "flags.h"
 #include "ps2.h"
 #include "mm/pmm.h"
+#include "kmalloc.h"
 
 __attribute__ ((constructor)) void
 __init_kernel() {
@@ -28,6 +29,7 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     multiboot_print_info(multiboot_info.addr);
     printk_debug("Interrupts enabled: %s\n", interrupts_enabled() ? "yes" : "no");
     pmm_init(meminfo, multiboot_info);
+    init_heap();
 
     uint32_t module_addr;
     if ((module_addr = multiboot_get_first_module(multiboot_info.addr)) == 0) {
@@ -39,10 +41,16 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     printk_debug("kernel virtual end %#x\n", meminfo.virtual_end);
     printk_debug("kernel physical start %#x\n", meminfo.physical_start);
     printk_debug("kernel physical end %#x\n", meminfo.physical_end);
-    // Trigger some page faults.
-    *((char *)0xc0400000) = 10;
-    *((char *)0xc0800000) = 10;
-
+    for (int i = 0; i < 5; ++i) {
+        int *x = (int *)kmalloc(sizeof(int));
+        *x = 4;
+        printk_debug("kmalloc'd x @ %#x. x is %d\n", (uint32_t)x, *x);
+        long long *y = (long long *)kmalloc(sizeof(long long));
+        *y = 4;
+        printk_debug("kmalloc'd x @ %#x. y is %lld\n", y, *y);
+        kfree(x);
+        kfree(y);
+    }
     // loop forever waiting for the next interrupt
     for(;;) {
         asm volatile("hlt");

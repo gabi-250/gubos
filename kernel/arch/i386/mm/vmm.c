@@ -24,6 +24,6 @@ vmm_map_addr(void *addr, uint32_t flags) {
 
     uint32_t pdindex = ((uint32_t)addr) >> PAGE_SHIFT;
     void *physical_addr = pmm_alloc_page();
-    (&page_directory)[pdindex] = ((uint32_t)physical_addr) | (flags & 0xFFF) | PAGE_FLAG_PAGE_SIZE;
+    (&page_directory)[pdindex] = ((uint32_t)physical_addr) | (flags & 0xFFF) | PAGE_FLAG_PAGE_SIZE | PAGE_FLAG_PRESENT;
     printk_debug("[VMM]: mapped %#x (virtual) -> %#x (physical)\n", addr, physical_addr);
 }

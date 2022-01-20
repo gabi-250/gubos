@@ -23,6 +23,9 @@ $(GUBOS):
 qemu: $(GUBOS)
 	qemu-system-i386 -cdrom $(GUBOS) $(QEMU_FLAGS)
 
+monitor: $(GUBOS)
+	qemu-system-i386 -cdrom $(GUBOS) -monitor stdio
+
 debug: $(GUBOS)
 	qemu-system-i386 -cdrom $(GUBOS) $(QEMU_FLAGS) -s -S &> qemu.log &
 	gdb \
