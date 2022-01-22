@@ -2,6 +2,7 @@
 build
 sysroot
 .gdb_history
+grub/modules
 
 # Prerequisites
 *.d

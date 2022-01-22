@@ -15,6 +15,7 @@ CFLAGS:=$(CFLAGS) $(ARCH_CFLAGS)
 OBJS=\
 itoa.o \
 vga.o \
+printk.o \
 string/string.o \
 string/memcmp.o\
 string/memcpy.o\
@@ -22,7 +23,6 @@ string/memmove.o\
 string/memset.o\
 string/strlen.o\
 $(ARCHDIR)/tty.o \
-$(ARCHDIR)/printk.o \
 $(ARCHDIR)/portio.o \
 
 LIBK_OBJS=$(OBJS:.o=.libk.o)
