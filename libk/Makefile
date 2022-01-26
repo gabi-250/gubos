@@ -24,6 +24,7 @@ string/memset.o\
 string/strlen.o\
 $(ARCHDIR)/tty.o \
 $(ARCHDIR)/portio.o \
+$(ARCHDIR)/panic.o \
 
 LIBK_OBJS=$(OBJS:.o=.libk.o)
 

@@ -3,6 +3,7 @@
 #include "tty.h"
 #include "vga.h"
 #include "string.h"
+#include "errno.h"
 
 #include <limits.h>
 #include <stdbool.h>
@@ -11,10 +12,19 @@
 
 // XXX
 #define ARG_MAX_LEN 256
+
 #define PRINTK_LOG_COLOR_DEBUG vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_LIGHT_BLUE)
 #define PRINTK_LOG_COLOR_INFO vga_entry_color(VGA_COLOR_BLACK, VGA_COLOR_LIGHT_BLUE)
 #define PRINTK_LOG_COLOR_WARN vga_entry_color(VGA_COLOR_BROWN, VGA_COLOR_LIGHT_BLUE)
 #define PRINTK_LOG_COLOR_ERROR vga_entry_color(VGA_COLOR_RED, VGA_COLOR_LIGHT_BLUE)
+
+// Print out the specified string, returning an error if the string contains any
+// null bytes.
+#define PRINT_OR_RET(color, s, len) \
+    if (print(color, s, len) != len) return -EINVAL;
+
+#define PRINTK_FLAGS_DEFAULT 0
+#define PRINTK_FLAGS_HASH    1
 
 static int
 putchar(uint8_t color, int ic) {
@@ -39,15 +49,14 @@ log_level_to_vga_color(uint8_t log_level) {
     }
 }
 
-static bool
+static size_t
 print(uint8_t color, const char* data, size_t length) {
     const unsigned char* bytes = (const unsigned char*) data;
-    for (size_t i = 0; i < length; i++) {
-        if (putchar(color, bytes[i]) == EOF) {
-            return false;
-        }
+    size_t i = 0;
+    while (i < length && putchar(color, bytes[i])) {
+        ++i;
     }
-    return true;
+    return i;
 }
 
 int
@@ -90,23 +99,23 @@ vprintk(uint8_t log_level, const char *fmt, va_list params) {
             }
             switch (fmt[++i]) {
                 case '%':
-                    print(color, fmt + i, 1);
+                    PRINT_OR_RET(color, fmt + i, 1);
                     break;
                 case 'd':
                 case 'i':
                     itoa(va_arg(params, int), formatted_arg);
-                    print(color, formatted_arg, strlen(formatted_arg));
+                    PRINT_OR_RET(color, formatted_arg, strlen(formatted_arg));
                     break;
                 case 'x':
                 case 'X':
                     if (flags & PRINTK_FLAGS_HASH) {
-                        print(color, "0x", 2);
+                        PRINT_OR_RET(color, "0x", 2);
                     }
                     uitoa_hex(va_arg(params, unsigned int), formatted_arg);
                     if (fmt[i] == 'X') {
                         strupper(formatted_arg);
                     }
-                    print(color, formatted_arg, strlen(formatted_arg));
+                    PRINT_OR_RET(color, formatted_arg, strlen(formatted_arg));
                     break;
                 case 'l':
                     if (i < len - 2 && fmt[i + 1] == 'l') {
@@ -122,7 +131,7 @@ vprintk(uint8_t log_level, const char *fmt, va_list params) {
                             case 'x':
                             case 'X':
                                 if (flags & PRINTK_FLAGS_HASH) {
-                                    print(color, "0x", 2);
+                                    PRINT_OR_RET(color, "0x", 2);
                                 }
                                 uitoa_hex(va_arg(params, unsigned long long), formatted_arg);
                                 if (fmt[i] == 'X') {
@@ -132,7 +141,7 @@ vprintk(uint8_t log_level, const char *fmt, va_list params) {
                             default:
                                 goto unknown_fmt_specifier;
                         }
-                        print(color, formatted_arg, strlen(formatted_arg));
+                        PRINT_OR_RET(color, formatted_arg, strlen(formatted_arg));
                         i += 2;
                     } else {
                         goto unknown_fmt_specifier;
@@ -145,7 +154,7 @@ vprintk(uint8_t log_level, const char *fmt, va_list params) {
                     break;
                 case 's':
                     char *str_arg = va_arg(params, char *);
-                    print(color, str_arg, strlen(str_arg));
+                    PRINT_OR_RET(color, str_arg, strlen(str_arg));
                     break;
                 default:
                     goto unknown_fmt_specifier;
@@ -156,8 +165,7 @@ vprintk(uint8_t log_level, const char *fmt, va_list params) {
     return len;
 missing_fmt_specifier:
 unknown_fmt_specifier:
-    // XXX set errno
-    return -1;
+    return -EINVAL;
 }
 
 int

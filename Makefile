@@ -39,6 +39,7 @@ debug: $(GUBOS)
 $(PROJECTS):
 ifeq ($(MAKECMDGOALS), clean)
 	@echo "cleaning $@"
+	make -C $@ clean
 else
 	make -C $@ install
 endif

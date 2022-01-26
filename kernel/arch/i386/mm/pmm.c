@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include "panic.h"
 #include "mm/pmm.h"
 #include "mm/vmm.h"
 #include "multiboot2.h"
@@ -43,8 +44,7 @@ pmm_init(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
         tag = (struct multiboot_tag *)((multiboot_uint8_t *) tag + ((tag->size + 7) & ~7));
     }
     if (tag-> type == MULTIBOOT_TAG_TYPE_END) {
-        // XXX couldn't get memory map: handle the error
-        return;
+        PANIC("failed to read memory map");
     }
     multiboot_memory_map_t *mmap = ((struct multiboot_tag_mmap *) tag)->entries;
     while ((multiboot_uint8_t *) mmap < (multiboot_uint8_t *) tag + tag->size) {
@@ -74,8 +74,8 @@ pmm_alloc_page() {
             return (void *)((i * 8 + alloc_bit) * PAGE_SIZE);
         }
     }
-    // error
-    return 0;
+    // XXX handle this more gracefully
+    PANIC("out of memory");
 }
 
 void

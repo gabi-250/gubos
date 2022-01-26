@@ -4,10 +4,6 @@
 #include <stdarg.h>
 #include <stdint.h>
 
-#define EOF (-1)
-#define PRINTK_FLAGS_DEFAULT 0
-#define PRINTK_FLAGS_HASH    1
-
 enum printk_log_level {
     PRINTK_DEBUG,
     PRINTK_INFO,
