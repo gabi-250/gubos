@@ -32,7 +32,7 @@ typedef struct segment_descriptor {
     // L   - the 64-bit code segment flag. If set, the segment is a 64-bit code segment
     // AVL - "available for use by system software", so in other words, reserved
     //       and should be set to 0
-    uint8_t granularity;
+    uint8_t flags;
     // Bits 24-31 of the segment base.
     uint8_t base_high;
 } __attribute__((packed)) segment_descriptor_t;
@@ -60,13 +60,13 @@ set_segment_descriptor(uint32_t i, uint32_t base, uint32_t limit,
     gdt_entries[i].access_type = access_type;
     // The lower 16 bits of limit:
     gdt_entries[i].limit_low = limit & 0xffff;
-    gdt_entries[i].granularity = (limit >> 16) & 0x0f;
+    gdt_entries[i].flags = (limit >> 16) & 0x0f;
     // Set these flags (0b1100):
     // G   = 1
     // D/B = 1
     // L   = 0
     // AVL = 0
-    gdt_entries[i].granularity |= 0b1100 << 4;
+    gdt_entries[i].flags |= 0b1100 << 4;
 }
 
 void
