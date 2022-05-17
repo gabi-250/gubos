@@ -2,11 +2,20 @@ ENTRY(_start)
 
 SECTIONS
 {
-    /* We want a higher-half kernel, which will live at 3GB + 1MB */
-    . = 0xC0100000;
+    /* The kernel is loaded at 1 MB in the physical address space... */
+    . = 0x00100000;
 
+    __kernel_physical_start = .;
+
+    /* ...but we want a higher-half kernel, so in the virtual address space, the
+     * kernel lives at 3GB + 1MB
+     *
+     * NOTE: the virtual memory address (VMA) is set to 0xC0100000 by moving the
+     * location counter. The load memory address (LMA) is specified using the
+     * `AT` keyword.
+     * */
+    . += 0xC0000000;
     __kernel_virtual_start = .;
-    __kernel_physical_start = . - 0xC0000000;
 
     .text ALIGN(4K): AT(ADDR(.text) - 0xC0000000)
     {
