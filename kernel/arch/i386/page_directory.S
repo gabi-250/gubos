@@ -1,7 +1,7 @@
 #define __ASSEMBLY__ 1
 #include "mm/vmm.h"
 
-.set KERNEL_PAGE_TABLE_ENTRY, 0xC0000000 >> PAGE_SHIFT
+.set KERNEL_PAGE_TABLE_ENTRY, PAGE_DIRECTORY_INDEX(0xC0000000)
 
 .globl page_directory
 
@@ -16,8 +16,8 @@ page_directory:
     # The higher-half mapping
 _higher_half_mapping:
     .long 0b10000011
-.rept PAGE_TABLE_ENTRIES - KERNEL_PAGE_TABLE_ENTRY - 1
+.rept PAGE_TABLE_SIZE - KERNEL_PAGE_TABLE_ENTRY - 1
     .long 0x00000000
 .endr
 
-PAGE_TABLE_ENTRY_COUNT: .long PAGE_TABLE_ENTRIES
+PAGE_TABLE_ENTRY_COUNT: .long PAGE_TABLE_SIZE

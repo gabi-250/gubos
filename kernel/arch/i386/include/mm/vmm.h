@@ -4,9 +4,11 @@
 // ======================================================================
 // Paging constants
 // ======================================================================
-#define PAGE_SHIFT         22
-#define PAGE_SIZE          (1 << PAGE_SHIFT)
-#define PAGE_TABLE_ENTRIES 1024
+#define PAGE_DIRECTORY_START 22
+#define PAGE_TABLE_START     12
+// 4 MB pages
+#define KERNEL_PAGE_SIZE     (1 << 22)
+#define PAGE_TABLE_SIZE      1024
 
 // ======================================================================
 // Page table entry flags
@@ -33,9 +35,18 @@
 // global.
 #define PAGE_FLAG_GLOBAL         (1 << 8)
 
+#define PAGE_DIRECTORY_INDEX(addr) ((addr) >> PAGE_DIRECTORY_START)
+#define PAGE_TABLE_INDEX(addr) (((addr) >> PAGE_TABLE_START) & ((1 << PAGE_TABLE_START) - 1))
+
 #ifndef __ASSEMBLY__
 #include <stdint.h>
+#include "kernel_meminfo.h"
 
+// The kernel virtual address space ends at the 4GB boundary.
+#define KERNEL_VIRTUAL_END   UINT32_MAX
+
+void vmm_init(kernel_meminfo_t);
+void vmm_set_page_directory(uint32_t);
 void vmm_map_addr(void *, uint32_t);
 #endif
 

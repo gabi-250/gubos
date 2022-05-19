@@ -3,6 +3,7 @@
 #include "panic.h"
 #include "mm/pmm.h"
 #include "mm/vmm.h"
+#include "kmalloc.h"
 #include "multiboot2.h"
 #include "kernel_meminfo.h"
 
@@ -15,21 +16,21 @@ static uint8_t MEM_BITMAP[MEM_BITMAP_SIZE];
 
 static void
 pmm_mark_addr_used(uint32_t addr) {
-    size_t bitmap_bit = addr / PAGE_SIZE;
+    size_t bitmap_bit = addr / KERNEL_PAGE_SIZE;
     size_t bitmap_index = bitmap_bit / 8;
     MEM_BITMAP[bitmap_index] |= (1 << (bitmap_bit % 8));
 }
 
 static void
 pmm_mark_range_used(uint32_t start_addr, uint32_t end_addr) {
-    for (uint32_t i = start_addr; i < end_addr; i += PAGE_SIZE) {
+    for (uint32_t i = start_addr; i < end_addr; i += KERNEL_PAGE_SIZE) {
         pmm_mark_addr_used(i);
     }
 }
 
 static void
 pmm_mark_addr_free(uint32_t addr) {
-    size_t bitmap_bit = addr / PAGE_SIZE;
+    size_t bitmap_bit = addr / KERNEL_PAGE_SIZE;
     size_t bitmap_index = bitmap_bit / 8;
     MEM_BITMAP[bitmap_index] &= ~(1 << bitmap_bit);
 }
@@ -38,6 +39,12 @@ void
 pmm_init(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     // Mark the kernel physical address range as used:
     pmm_mark_range_used(meminfo.physical_start, meminfo.physical_end);
+    // Mark the kernel heap address range as used:
+    uint32_t addr_space_delta = (meminfo.virtual_start - meminfo.physical_start);
+    uint32_t heap_start = KERNEL_HEAP_START - addr_space_delta;
+    uint32_t heap_end = KERNEL_HEAP_START + KERNEL_HEAP_SIZE - 1 - addr_space_delta;
+    pmm_mark_range_used(heap_start, heap_end);
+
     // Mark any unavailable memory regions as used:
     struct multiboot_tag *tag = (struct multiboot_tag *) (multiboot_info.addr + 8);
     while (tag->type != MULTIBOOT_TAG_TYPE_END && tag->type != MULTIBOOT_TAG_TYPE_MMAP) {
@@ -71,7 +78,7 @@ pmm_alloc_page() {
             // Keep shifting until the first zeroed bit is found.
             for (uint8_t entry = MEM_BITMAP[i]; entry & 1; entry >>= 1, alloc_bit += 1);
             MEM_BITMAP[i] |= (1 << alloc_bit);
-            return (void *)((i * 8 + alloc_bit) * PAGE_SIZE);
+            return (void *)((i * 8 + alloc_bit) * KERNEL_PAGE_SIZE);
         }
     }
     // XXX handle this more gracefully

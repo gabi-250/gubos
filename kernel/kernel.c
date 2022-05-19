@@ -7,6 +7,7 @@
 #include "flags.h"
 #include "ps2.h"
 #include "mm/pmm.h"
+#include "mm/vmm.h"
 #include "kmalloc.h"
 
 __attribute__ ((constructor)) void
@@ -29,6 +30,8 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     multiboot_print_info(multiboot_info.addr);
     printk_debug("Interrupts enabled: %s\n", interrupts_enabled() ? "yes" : "no");
     pmm_init(meminfo, multiboot_info);
+    vmm_init(meminfo);
+
     init_heap();
 
     uint32_t module_addr;
@@ -51,6 +54,7 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
         kfree(x);
         kfree(y);
     }
+
     // loop forever waiting for the next interrupt
     for(;;) {
         asm volatile("hlt");
