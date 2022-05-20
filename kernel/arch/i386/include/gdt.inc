@@ -28,7 +28,7 @@ data_descriptor:
     .byte 0x0
 tmp_gdt_descriptor:
 tmp_gdt_max_offset: .word (. - tmp_gdt - 1)
-tmp_gdt_start:      .long tmp_gdt - 0xC0000000
+tmp_gdt_start:      .long tmp_gdt
 
 .set TMP_GDT_CODE_SEGMENT, (code_descriptor - tmp_gdt)
 .set TMP_GDT_DATA_SEGMENT, (data_descriptor - tmp_gdt)

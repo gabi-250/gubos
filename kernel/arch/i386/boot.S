@@ -6,14 +6,16 @@ stack_bottom:
 .skip 1 << 14
 stack_top:
 
-.section .data
-# The page tables
+.section .data.boot, "awx"
 # A temporary GDT to replace the one set up by GRUB (only needed until paging is
 # enabled, because once we have paging, the GDT setup can more easily be handled in
 # C land).
 .include "./arch/i386/include/gdt.inc"
+# The boot page tables
+.include "./arch/i386/include/page_directory.inc"
 
-.text
+.section .text.boot, "awx"
+
 # The kernel entry point
 .global _start
 _start:
@@ -31,8 +33,8 @@ _start:
     # Set up a temporary GDT
     # Remember: at this point paging isn't enabled yet, so we need to subtract
     # 0xC0000000 from every memory access.
-    lgdt tmp_gdt_descriptor - 0xC0000000
-    jmp $TMP_GDT_CODE_SEGMENT, $.Ltmp_gdt_done - 0xC0000000
+    lgdt tmp_gdt_descriptor
+    jmp $TMP_GDT_CODE_SEGMENT, $.Ltmp_gdt_done
 .Ltmp_gdt_done:
     mov $TMP_GDT_DATA_SEGMENT, %ax
     mov %ax, %ds
@@ -49,17 +51,19 @@ _start:
     or $0x00000010, %ebx
     # Update CR4
     mov %ebx, %cr4
-    lea page_directory - 0xC0000000, %eax
+    lea boot_page_directory, %eax
     mov %eax, %cr3
 _enable_paging:
     mov %cr0, %eax
     or $0x80000000, %eax
     mov %eax, %cr0
-    lea _higher_half, %eax
-    jmp *%eax
+    jmp _higher_half
+
+# The higher-half kernel entry point
+.section .text.boot.higher_half, "awx"
 _higher_half:
     # The identity mapping isn't needed anymore at this point
-    movl $0, (page_directory)
+    movl $0, (boot_page_directory + 0xC0000000)
     invlpg 0
     # Now that we've enabled paging, call some C code to sets up the real GDT
     call gdt_init

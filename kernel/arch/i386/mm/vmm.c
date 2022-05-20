@@ -6,8 +6,6 @@
 #include "printk.h"
 #include "string.h"
 
-extern uint32_t page_directory;
-
 typedef struct page_directory {
     uint32_t entries[PAGE_TABLE_SIZE];
 } __attribute__ ((aligned(4096))) page_directory_t;
@@ -46,6 +44,13 @@ physical_addr_to_pde(uint32_t addr) {
     return (addr >> 22) << 22;
 }
 
+static inline uint32_t
+virtual_to_physical(uint32_t addr, kernel_meminfo_t meminfo) {
+    // Subtract (virtual_start - physical_start) to get the physical address.
+    uint32_t addr_space_delta = (meminfo.virtual_start - meminfo.physical_start);
+    return addr - addr_space_delta;
+}
+
 void
 vmm_init(kernel_meminfo_t meminfo) {
     memset(KERNEL_PAGE_DIRECTORY.entries, PAGE_TABLE_SIZE, 0);
@@ -59,10 +64,7 @@ vmm_init(kernel_meminfo_t meminfo) {
             entry | PAGE_FLAG_PRESENT | PAGE_FLAG_PAGE_SIZE | PAGE_FLAG_WRITE;
     }
 
-    // Subtract (virtual_start - physical_start) to get the physical address of
-    // the page directory.
-    uint32_t addr_space_delta = (meminfo.virtual_start - meminfo.physical_start);
-    uint32_t kernel_page_directory = (uint32_t)&KERNEL_PAGE_DIRECTORY - addr_space_delta;
+    uint32_t kernel_page_directory = virtual_to_physical((uint32_t)&KERNEL_PAGE_DIRECTORY, meminfo);
     vmm_set_page_directory(kernel_page_directory);
 }
 

@@ -17,7 +17,6 @@ GUBOSINCLUDE :=\
 -L=/usr/src/gubos/lib\
 
 KERNEL_ARCH_OBJS :=\
-$(ARCHDIR)/page_directory.o\
 $(ARCHDIR)/gdtS.o\
 $(ARCHDIR)/gdtc.o\
 $(ARCHDIR)/flags.o\
@@ -28,6 +27,7 @@ $(ARCHDIR)/multiboot2_header.o\
 $(ARCHDIR)/multiboot2.o\
 $(ARCHDIR)/mm/pmm.o\
 $(ARCHDIR)/mm/vmm.o\
+$(ARCHDIR)/kernel_bootstrap.o\
 
 KERNEL_OBJS = $(KERNEL_ARCH_OBJS) kernel.o kmalloc.o
 

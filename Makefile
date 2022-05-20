@@ -33,6 +33,7 @@ debug: $(GUBOS)
 		--eval-command="set history save on" \
 		--eval-command="set arch i386" \
 		--eval-command="target remote localhost:1234" \
+		--eval-command="break _start" \
 		--eval-command="break kernel_main" \
 		./build/boot/gubos.kernel
 
