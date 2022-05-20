@@ -27,7 +27,7 @@ $(ARCHDIR)/multiboot2_header.o\
 $(ARCHDIR)/multiboot2.o\
 $(ARCHDIR)/mm/pmm.o\
 $(ARCHDIR)/mm/vmm.o\
-$(ARCHDIR)/kernel_bootstrap.o\
+$(ARCHDIR)/init_paging.o\
 
 KERNEL_OBJS = $(KERNEL_ARCH_OBJS) kernel.o kmalloc.o
 

@@ -30,7 +30,6 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     multiboot_print_info(multiboot_info.addr);
     printk_debug("Interrupts enabled: %s\n", interrupts_enabled() ? "yes" : "no");
     pmm_init(meminfo, multiboot_info);
-    vmm_init(meminfo);
 
     init_heap();
 

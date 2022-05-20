@@ -12,6 +12,8 @@
 #define MEM_BITMAP_SIZE (1 << 7)
 #define BITMAP_ENTRY_MASK UINT8_MAX
 
+kernel_meminfo_t PMM_KERNEL_MEMINFO;
+
 static uint8_t MEM_BITMAP[MEM_BITMAP_SIZE];
 
 static void
@@ -37,6 +39,7 @@ pmm_mark_addr_free(uint32_t addr) {
 
 void
 pmm_init(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
+    PMM_KERNEL_MEMINFO = meminfo;
     // Mark the kernel physical address range as used:
     pmm_mark_range_used(meminfo.physical_start, meminfo.physical_end);
     // Mark the kernel heap address range as used:

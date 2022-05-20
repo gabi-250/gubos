@@ -1,9 +1,17 @@
 #include <stdint.h>
 #include "kmalloc.h"
+#include "mm/vmm.h"
 
 kmalloc_header_t *KMALLOC_HEAD;
 
 void init_heap() {
+    uint32_t max_addr = KERNEL_HEAP_START + KERNEL_HEAP_SIZE;
+    for (uint32_t virtual_addr = KERNEL_HEAP_START;
+            virtual_addr < max_addr; virtual_addr += KERNEL_PAGE_SIZE)
+    {
+        vmm_map_addr((void *)virtual_addr, PAGE_FLAG_WRITE);
+    }
+
     KMALLOC_HEAD = (kmalloc_header_t *)KERNEL_HEAP_START;
     *KMALLOC_HEAD = (kmalloc_header_t){
         .size = KERNEL_HEAP_SIZE - sizeof(kmalloc_header_t),

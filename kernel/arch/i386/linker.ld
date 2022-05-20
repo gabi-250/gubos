@@ -19,7 +19,19 @@ SECTIONS
 	*(.data.boot)
     }
 
+    .text.init_paging ALIGN(4K):
+    {
+	*(.text.init_paging)
+    }
+
+    .data.init_paging ALIGN(4K):
+    {
+	*(.data.init_paging)
+    }
+
     __bootstrap_code_size = . - __kernel_physical_start;
+    /* Make sure the bootstrapping logic doesn't exceed 4MB! */
+    . += 4M;
 
     /* We want a higher-half kernel, so in the virtual address space, the
      * kernel lives at 3GB + 1MB
@@ -30,16 +42,17 @@ SECTIONS
      * */
     . = 0xC0100000;
     __kernel_virtual_start = .;
+    __kernel_addr_space_delta = __kernel_virtual_start - __kernel_physical_start;
 
     /* Make sure we don't accidentally map back to the boostrap code. */
     . +=  __bootstrap_code_size;
 
-    .text.boot.higher_half ALIGN(4K): AT(ADDR(.text.boot.higher_half) - 0xC0000000)
+    .text.boot.higher_half ALIGN(4K): AT(ADDR(.text.boot.higher_half) - __kernel_addr_space_delta)
     {
 	*(.text.boot.higher_half)
     }
 
-    .text ALIGN(4K): AT(ADDR(.text) - 0xC0000000)
+    .text ALIGN(4K): AT(ADDR(.text) - __kernel_addr_space_delta)
     {
 	*(.text)
     }
@@ -48,22 +61,22 @@ SECTIONS
      * boostrapping logic */
     /*. += 0x00400000;*/
 
-    .rodata ALIGN(4K): AT(ADDR(.rodata) - 0xC0000000)
+    .rodata ALIGN(4K): AT(ADDR(.rodata) - __kernel_addr_space_delta)
     {
 	*(.rodata)
     }
 
-    .data ALIGN(4K): AT(ADDR(.data) - 0xC0000000)
+    .data ALIGN(4K): AT(ADDR(.data) - __kernel_addr_space_delta)
     {
 	*(.data)
     }
 
-    .bss ALIGN(4K): AT(ADDR(.bss) - 0xC0000000)
+    .bss ALIGN(4K): AT(ADDR(.bss) - __kernel_addr_space_delta)
     {
 	*(COMMON)
 	*(.bss)
     }
 
     __kernel_virtual_end = .;
-    __kernel_physical_end = . - 0xC0000000;
+    __kernel_physical_end = . - __kernel_addr_space_delta;
 }

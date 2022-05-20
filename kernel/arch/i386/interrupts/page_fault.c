@@ -1,7 +1,5 @@
 #include <stdint.h>
-#include <stdbool.h>
 #include "interrupts/page_fault.h"
-#include "interrupts/idt.h"
 #include "printk.h"
 #include "mm/vmm.h"
 
