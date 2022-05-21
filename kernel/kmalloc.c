@@ -4,7 +4,8 @@
 
 kmalloc_header_t *KMALLOC_HEAD;
 
-void init_heap() {
+void
+kmalloc_init() {
     uint32_t max_addr = KERNEL_HEAP_START + KERNEL_HEAP_SIZE;
     for (uint32_t virtual_addr = KERNEL_HEAP_START;
             virtual_addr < max_addr; virtual_addr += KERNEL_PAGE_SIZE)
@@ -19,7 +20,8 @@ void init_heap() {
     };
 }
 
-void * kmalloc(size_t size) {
+void *
+kmalloc(size_t size) {
     kmalloc_header_t *free_region = KMALLOC_HEAD;
     kmalloc_header_t *prev_region = NULL;
 
@@ -62,7 +64,8 @@ void * kmalloc(size_t size) {
     return NULL;
 }
 
-void kfree(void *addr) {
+void
+kfree(void *addr) {
     kmalloc_header_t *region =
         (kmalloc_header_t *)((char *)addr - sizeof(kmalloc_header_t));
 

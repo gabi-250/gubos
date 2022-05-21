@@ -34,7 +34,7 @@
 #define PAGE_FLAG_DIRTY          (1 << 6)
 // The page size flag. Must be 1 if 4M pages are in use.
 #define PAGE_FLAG_PAGE_SIZE      (1 << 7)
-// The global flag.Iif CR4.PGE = 1, determines whether the translation is
+// The global flag. If CR4.PGE = 1, determines whether the translation is
 // global.
 #define PAGE_FLAG_GLOBAL         (1 << 8)
 

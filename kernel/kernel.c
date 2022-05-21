@@ -30,8 +30,7 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     multiboot_print_info(multiboot_info.addr);
     printk_debug("Interrupts enabled: %s\n", interrupts_enabled() ? "yes" : "no");
     pmm_init(meminfo, multiboot_info);
-
-    init_heap();
+    kmalloc_init();
 
     uint32_t module_addr;
     if ((module_addr = multiboot_get_first_module(multiboot_info.addr)) == 0) {
