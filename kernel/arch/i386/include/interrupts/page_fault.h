@@ -6,10 +6,15 @@
 
 // ======================================================================
 // Page fault exception error code flags
+//
+// See also: Figure 6-11 from Chapter 6 (Interrupt and exception handling) of
+// Intel® 64 and IA-32 Architectures Software Developer's Manual, Volume 3.
 // ======================================================================
 
-// The exception is caused by the fact that the P flag of one of the paging
-// structures used to translate the address was set to 0.
+// If set to 0, the page fault was caused by a non-present page (P flag of one of the paging
+// structures used to translate the address was set to 0).
+//
+// If set to 1, the page fault was caused by a page protection violation.
 #define PAGING_ERR_CODE_P     1
 // The access causing the page-fault exception was a write (if set to 0, the
 // access was a read).

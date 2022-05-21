@@ -18,12 +18,14 @@ read_page_fault_addr() {
 void
 paging_handle_fault(interrupt_state_t * state, uint32_t err_code) {
     uint32_t addr = read_page_fault_addr();
-    printk_debug("page fault @ %#x (access=%s, eflags=%#x, cs=%d, eip=%d)\n",
+    printk_debug("page fault @ %#x (eflags=%#x, cs=%d, eip=%d): cause=%s, access=%s, mode=%s\n\t\n",
             addr,
-            err_code & PAGING_ERR_CODE_WR ? "write": "read",
             state->eflags,
             state->cs,
-            state->eip);
+            state->eip,
+            err_code & PAGING_ERR_CODE_P ? "page_protection_violation": "non_present_page",
+            err_code & PAGING_ERR_CODE_WR ? "write": "read",
+            err_code & PAGING_ERR_CODE_US ? "user": "kernel");
     // XXX map the address for now.
     vmm_map_addr((void *) addr, PAGE_FLAG_WRITE);
 }
