@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
-#include "printk.h"
+#include "panic.h"
 #include "gdt.h"
 #include "interrupts/idt.h"
 #include "interrupts/page_fault.h"
@@ -43,7 +43,7 @@ static idt_register_t idtr;
 
 __attribute__ ((interrupt)) void
 default_exception_handler(interrupt_state_t *state) {
-    printk_debug("handling interrupt (eflags=%#x, cs=%d, eip=%d)\n",
+    PANIC("received interrupt (eflags=%#x, cs=%d, eip=%d)\n",
             state-> eflags,
             state->cs,
             state->eip);
@@ -51,7 +51,7 @@ default_exception_handler(interrupt_state_t *state) {
 
 __attribute__ ((interrupt)) void
 default_exception_handler_with_err(interrupt_state_t *state, uint32_t err_code) {
-    printk_debug("handling interrupt (eflags=%#x, cs=%d, eip=%d, error=%d)\n",
+    PANIC("received interrupt (eflags=%#x, cs=%d, eip=%d, error=%d)\n",
             state->eflags,
             state->cs,
             state->eip,

@@ -2,9 +2,10 @@
 #include "gdt.h"
 #include "string.h"
 
-#define GDT_ENTRY_COUNT 5
+#define GDT_ENTRY_COUNT 6
 
 extern void load_gdt(uint32_t, uint16_t, uint16_t);
+extern void load_tss(uint32_t);
 
 static segment_descriptor_t gdt_entries[GDT_ENTRY_COUNT];
 
@@ -14,11 +15,13 @@ static gdt_descriptor_t gdt;
 // The task-state segment.
 static task_state_segment_t tss;
 
+extern uint32_t stack_top;
+
 static void
 tss_init() {
     memset(&tss, sizeof(tss), 0);
     tss.ss0 = GDT_KERNEL_DATA_SEGMENT;
-    tss.esp0 = 0; // TODO pick a stack address
+    tss.esp0 = stack_top; // TODO pick a stack address
     // XXX what about io_map_base_address?
 }
 
@@ -69,5 +72,6 @@ gdt_init() {
     gdt.base = (uint32_t)gdt_entries;
     gdt.limit = (sizeof(segment_descriptor_t) * GDT_ENTRY_COUNT) - 1;
     load_gdt((uint32_t)&gdt, GDT_KERNEL_CODE_SEGMENT, GDT_KERNEL_DATA_SEGMENT);
-    // TODO call LTR
+
+    load_tss(GDT_TASK_STATE_SEGMENT);
 }

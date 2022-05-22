@@ -16,6 +16,8 @@ stack_top:
 
 .section .text.boot, "awx"
 
+.global stack_top
+
 # The kernel entry point
 .global _start
 _start:
@@ -70,12 +72,12 @@ _higher_half:
     sub $8, %esp
     # Move the address of the "real" paging directory into CR3
     mov %eax, %cr3
+    # Set up the IDT and enable interrupts
+    call idt_init
     # Now that we've enabled paging, call some C code to sets up the real GDT
     call gdt_init
     # Call the global constructors
     call _init
-    # Set up the IDT and enable interrupts
-    call idt_init
     push $__kernel_virtual_end
     push $__kernel_virtual_start
     push $__kernel_physical_end

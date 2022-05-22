@@ -1,4 +1,5 @@
 .globl load_gdt
+.globl load_tss
 
 load_gdt:
     # The first argument is the GDT
@@ -22,4 +23,10 @@ load_gdt:
     # Remove the code segement selector + offset we pushed before the long jump
     pop %eax
     pop %eax
+    ret
+
+load_tss:
+    # The first argument is the segment selector that points to a TSS.
+    mov 4(%esp), %eax
+    ltr %ax
     ret
