@@ -3,7 +3,7 @@
 #include "panic.h"
 #include "gdt.h"
 #include "interrupts/idt.h"
-#include "interrupts/page_fault.h"
+#include "interrupts/handlers.h"
 #include "pic.h"
 #include "portio.h"
 #include "ps2.h"
@@ -44,23 +44,9 @@ static idt_register_t idtr;
 __attribute__ ((interrupt)) void
 default_exception_handler(interrupt_state_t *state) {
     PANIC("received interrupt (eflags=%#x, cs=%d, eip=%d)\n",
-            state-> eflags,
-            state->cs,
-            state->eip);
-}
-
-__attribute__ ((interrupt)) void
-default_exception_handler_with_err(interrupt_state_t *state, uint32_t err_code) {
-    PANIC("received interrupt (eflags=%#x, cs=%d, eip=%d, error=%d)\n",
             state->eflags,
             state->cs,
-            state->eip,
-            err_code);
-}
-
-__attribute__ ((interrupt)) void
-page_fault_exception_handler(interrupt_state_t *state, uint32_t err_code) {
-    paging_handle_fault(state, err_code);
+            state->eip);
 }
 
 __attribute__ ((interrupt)) void
@@ -102,21 +88,29 @@ idt_init() {
     // The entries in the 0-31 range are architecture-defined
     // interrupts/exceptions
     uint8_t flags = IDT_TRAP_GATE_FLAGS | IDT_SEG_PRESENT | IDT_KERNEL_DPL | IDT_32_BIT_GATE_SIZE;
-    for (uint16_t i = 0; i < IDT_PAGE_FAULT_EXCEPTION; ++i) {
-        if (IDT_INT_HAS_ERROR_CODE(i)) {
-            set_idt_gate(i, default_exception_handler_with_err, flags);
-        } else {
-            set_idt_gate(i, default_exception_handler, flags);
-        }
-    }
-    for (uint16_t i = IDT_X87_FPU_FLOATING_POINT_ERROR; i < IDT_RESERVED_INT_COUNT; ++i) {
-        if (IDT_INT_HAS_ERROR_CODE(i)) {
-            set_idt_gate(i, default_exception_handler_with_err, flags);
-        } else {
-            set_idt_gate(i, default_exception_handler, flags);
-        }
-    }
-    set_idt_gate(IDT_PAGE_FAULT_EXCEPTION, page_fault_exception_handler, flags);
+
+    set_idt_gate(INT_DIVIDE_ERROR_EXCEPTION, divide_error_exception_handler, flags);
+    set_idt_gate(INT_DEBUG_EXCEPTION, debug_exception_handler, flags);
+    set_idt_gate(INT_NMI_INTERRUPT, nmi_interrupt_handler, flags);
+    set_idt_gate(INT_BREAKPOINT_EXCEPTION, breakpoint_exception_handler, flags);
+    set_idt_gate(INT_OVERFLOW_EXCEPTION, overflow_exception_handler, flags);
+    set_idt_gate(INT_BOUND_RANGE_EXCEEDED_EXCEPTION, bound_range_exceeded_exception_handler, flags);
+    set_idt_gate(INT_INVALID_OPCODE_EXCEPTION, invalid_opcode_exception_handler, flags);
+    set_idt_gate(INT_DEVICE_NOT_AVAILABLE_EXCEPTION, device_not_available_exception_handler, flags);
+    set_idt_gate(INT_DOUBLE_FAULT_EXCEPTION, double_fault_exception_handler, flags);
+    set_idt_gate(INT_COPROCESSOR_SEGMENT_OVERRUN, coprocessor_segment_overrun_handler, flags);
+    set_idt_gate(INT_INVALID_TSS_EXCEPTION, invalid_tss_exception_handler, flags);
+    set_idt_gate(INT_SEGMENT_NOT_PRESENT, segment_not_present_handler, flags);
+    set_idt_gate(INT_STACK_FAULT_EXCEPTION, stack_fault_exception_handler, flags);
+    set_idt_gate(INT_GENERAL_PROTECTION_EXCEPTION, general_protection_exception_handler, flags);
+    set_idt_gate(INT_PAGE_FAULT_EXCEPTION, page_fault_exception_handler, flags);
+    set_idt_gate(INT_X87_FPU_FLOATING_POINT_ERROR, x87_fpu_floating_point_error_handler, flags);
+    set_idt_gate(INT_ALIGNMENT_CHECK_EXCEPTION, alignment_check_exception_handler, flags);
+    set_idt_gate(INT_MACHINE_CHECK_EXCEPTION, machine_check_exception_handler, flags);
+    set_idt_gate(INT_SIMD_FLOATING_POINT_EXCEPTION, simd_floating_point_exception_handler, flags);
+    set_idt_gate(INT_VIRTUALIZATION_EXCEPTION, virtualization_exception_handler, flags);
+    set_idt_gate(INT_CONTROL_PROTECTION_EXCEPTION, control_protection_exception_handler, flags);
+
     init_hardware_interrupts();
     flags = IDT_INT_GATE_FLAGS | IDT_SEG_PRESENT | IDT_KERNEL_DPL | IDT_32_BIT_GATE_SIZE;
     // The rest are user-defined interrupts

@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "idt.h"
+#include "interrupts/handlers.h"
 
 // ======================================================================
 // Page fault exception error code flags
@@ -34,6 +35,6 @@
 // Violation of SGX access control.
 #define PAGING_ERR_CODE_SGX  (1 << 15)
 
-void paging_handle_fault(interrupt_state_t *, uint32_t);
+void page_fault_handler(interrupt_state_t *, uint32_t);
 
 #endif /* __PAGE_FAULT_H__ */

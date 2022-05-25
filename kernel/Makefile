@@ -22,6 +22,7 @@ $(ARCHDIR)/gdtc.o\
 $(ARCHDIR)/flags.o\
 $(ARCHDIR)/interrupts/idt.o\
 $(ARCHDIR)/interrupts/page_fault.o\
+$(ARCHDIR)/interrupts/handlers.o\
 $(ARCHDIR)/boot.o\
 $(ARCHDIR)/multiboot2_header.o\
 $(ARCHDIR)/multiboot2.o\

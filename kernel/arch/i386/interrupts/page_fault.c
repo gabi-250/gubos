@@ -16,7 +16,7 @@ read_page_fault_addr() {
 }
 
 void
-paging_handle_fault(interrupt_state_t * state, uint32_t err_code) {
+page_fault_handler(interrupt_state_t * state, uint32_t err_code) {
     uint32_t addr = read_page_fault_addr();
     printk_debug("page fault @ %#x (eflags=%#x, cs=%d, eip=%d): cause=%s, access=%s, mode=%s\n\t\n",
             addr,
