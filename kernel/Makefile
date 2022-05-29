@@ -29,8 +29,9 @@ $(ARCHDIR)/multiboot2.o\
 $(ARCHDIR)/mm/pmm.o\
 $(ARCHDIR)/mm/vmm.o\
 $(ARCHDIR)/init_paging.o\
+$(ARCHDIR)/schedS.o\
 
-KERNEL_OBJS = $(KERNEL_ARCH_OBJS) kernel.o kmalloc.o
+KERNEL_OBJS = $(KERNEL_ARCH_OBJS) kernel.o kmalloc.o schedc.o task.o
 
 OBJS =\
 $(ARCHDIR)/crti.o \
@@ -65,6 +66,12 @@ $(ARCHDIR)/gdtc.o:
 
 $(ARCHDIR)/gdtS.o:
 	$(CC) -MD -c $(ARCHDIR)/gdt.S -o $(ARCHDIR)/gdtS.o -std=gnu11 $(CFLAGS)
+
+schedc.o:
+	$(CC) -MD -c sched.c -o schedc.o -std=gnu11 $(CFLAGS)
+
+$(ARCHDIR)/schedS.o:
+	$(CC) -MD -c $(ARCHDIR)/sched.S -o $(ARCHDIR)/schedS.o -std=gnu11 $(CFLAGS)
 
 %.o: %.c
 	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS)

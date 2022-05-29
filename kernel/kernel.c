@@ -9,6 +9,7 @@
 #include "mm/pmm.h"
 #include "mm/vmm.h"
 #include "kmalloc.h"
+#include "sched.h"
 
 __attribute__ ((constructor)) void
 __init_kernel() {
@@ -52,6 +53,8 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
         kfree(x);
         kfree(y);
     }
+
+    init_sched(meminfo);
 
     // loop forever waiting for the next interrupt
     for(;;) {

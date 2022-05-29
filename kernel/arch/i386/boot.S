@@ -2,9 +2,9 @@
 .align 16
 
 # Reserve a stack for the kernel
-stack_bottom:
+__kernel_stack_bottom:
 .skip 1 << 14
-stack_top:
+__kernel_stack_top:
 
 .section .data.boot, "awx"
 # A temporary GDT to replace the one set up by GRUB (only needed until paging is
@@ -16,14 +16,14 @@ stack_top:
 
 .section .text.boot, "awx"
 
-.global stack_top
+.global __kernel_stack_top
 
 # The kernel entry point
 .global _start
 _start:
     # Disable interrupts for now
     cli
-    lea stack_top - 0xC0000000, %esp
+    lea __kernel_stack_top - 0xC0000000, %esp
     # Save EBX: GRUB puts the physical address of the multiboot2 information
     # structure into EBX before invoking the OS (we add 0xC0000000 to get its
     # virtual address).
@@ -55,11 +55,13 @@ _enable_paging:
     mov %cr0, %eax
     or $0x80000000, %eax
     mov %eax, %cr0
+    push $__kernel_stack_top
     push $__kernel_virtual_end
     push $__kernel_virtual_start
     push $__kernel_physical_end
     push $__kernel_physical_start
     call init_paging
+    add $20, %esp
     # Update EIP to point to a higher-half address from now on.
     jmp _higher_half
 
@@ -68,16 +70,23 @@ _enable_paging:
 _higher_half:
     # update the stack pointer, keeping in mind that we already pushed two
     # values to the stack
-    mov $stack_top, %esp
+    mov $__kernel_stack_top, %esp
     sub $8, %esp
     # Move the address of the "real" paging directory into CR3
     mov %eax, %cr3
     # Set up the IDT and enable interrupts
     call idt_init
     # Now that we've enabled paging, call some C code to sets up the real GDT
+    push $__kernel_stack_top
+    push $__kernel_virtual_end
+    push $__kernel_virtual_start
+    push $__kernel_physical_end
+    push $__kernel_physical_start
     call gdt_init
+    add $20, %esp
     # Call the global constructors
     call _init
+    push $__kernel_stack_top
     push $__kernel_virtual_end
     push $__kernel_virtual_start
     push $__kernel_physical_end

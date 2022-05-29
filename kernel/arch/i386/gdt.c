@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include "kernel_meminfo.h"
 #include "gdt.h"
 #include "string.h"
 
@@ -13,15 +14,13 @@ static segment_descriptor_t gdt_entries[GDT_ENTRY_COUNT];
 static gdt_descriptor_t gdt;
 
 // The task-state segment.
-static task_state_segment_t tss;
-
-extern uint32_t stack_top;
+task_state_segment_t tss;
 
 static void
-tss_init() {
+tss_init(kernel_meminfo_t meminfo) {
     memset(&tss, sizeof(tss), 0);
     tss.ss0 = GDT_KERNEL_DATA_SEGMENT;
-    tss.esp0 = stack_top; // TODO pick a stack address
+    tss.esp0 = meminfo.stack_top; // TODO pick a stack address
     // XXX what about io_map_base_address?
 }
 
@@ -42,11 +41,11 @@ set_segment_descriptor(uint32_t i, uint32_t base, uint32_t limit, uint8_t access
 }
 
 void
-gdt_init() {
+gdt_init(kernel_meminfo_t meminfo) {
     // NOTE: TSS is used to build the kernel stack to use for interrupt handling
     // (whenever an interrupt occurs in userspace, the CPU needs to be able to
     // prepare the kernel stack before switching to ring 0 for interrupt handling).
-    tss_init();
+    tss_init(meminfo);
     // The NULL segment
     set_segment_descriptor(0, 0, 0, 0, 0);
 
