@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include "interrupts/page_fault.h"
 #include "printk.h"
+#include "panic.h"
 #include "mm/vmm.h"
 
 // Get the (linear) address that triggered the page fault.
@@ -23,9 +24,20 @@ page_fault_handler(interrupt_state_t * state, uint32_t err_code) {
             state->eflags,
             state->cs,
             state->eip,
-            err_code & PAGING_ERR_CODE_P ? "page_protection_violation": "non_present_page",
+            err_code & PAGING_ERR_CODE_P ? "protection_fault": "non_present_page",
             err_code & PAGING_ERR_CODE_WR ? "write": "read",
             err_code & PAGING_ERR_CODE_US ? "user": "kernel");
-    // XXX map the address for now.
-    vmm_map_addr((void *) addr, PAGE_FLAG_WRITE);
+
+    if (!(err_code & PAGING_ERR_CODE_P)) {
+        // A protection fault is always an error
+        if (err_code & PAGING_ERR_CODE_US) {
+            printk_debug("TODO: kill the misbehaving user process");
+        } else {
+            PANIC("kernel protection fault");
+        }
+    } else {
+        // Page not present
+        // XXX: always allow writes for now
+        vmm_map_addr((void *) addr, PAGE_FLAG_WRITE);
+    }
 }
