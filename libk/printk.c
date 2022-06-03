@@ -106,6 +106,10 @@ vprintk(uint8_t log_level, const char *fmt, va_list params) {
                     itoa(va_arg(params, int), formatted_arg);
                     PRINT_OR_RET(color, formatted_arg, strlen(formatted_arg));
                     break;
+                case 'u':
+                    itoa(va_arg(params, unsigned int), formatted_arg);
+                    PRINT_OR_RET(color, formatted_arg, strlen(formatted_arg));
+                    break;
                 case 'x':
                 case 'X':
                     if (flags & PRINTK_FLAGS_HASH) {

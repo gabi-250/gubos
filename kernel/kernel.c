@@ -13,8 +13,6 @@
 
 __attribute__ ((constructor)) void
 __init_kernel() {
-    tty_init();
-    ps2_init_devices();
 }
 
 __attribute__ ((destructor)) void
@@ -24,6 +22,8 @@ __uninit_kernel() {
 
 void
 kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
+    tty_init(multiboot_info, meminfo.higher_half_base);
+    ps2_init_devices();
     if (multiboot_info.magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
         printk_debug("Invalid multiboot2 magic number: %d\n", multiboot_info.magic);
         return;

@@ -56,12 +56,13 @@ _enable_paging:
     or $0x80000000, %eax
     mov %eax, %cr0
     push $__kernel_stack_top
+    push $__higher_half
     push $__kernel_virtual_end
     push $__kernel_virtual_start
     push $__kernel_physical_end
     push $__kernel_physical_start
     call init_paging
-    add $20, %esp
+    add $24, %esp
     # Update EIP to point to a higher-half address from now on.
     jmp _higher_half
 
@@ -78,15 +79,17 @@ _higher_half:
     call idt_init
     # Now that we've enabled paging, call some C code to sets up the real GDT
     push $__kernel_stack_top
+    push $__higher_half
     push $__kernel_virtual_end
     push $__kernel_virtual_start
     push $__kernel_physical_end
     push $__kernel_physical_start
     call gdt_init
-    add $20, %esp
+    add $24, %esp
     # Call the global constructors
     call _init
     push $__kernel_stack_top
+    push $__higher_half
     push $__kernel_virtual_end
     push $__kernel_virtual_start
     push $__kernel_physical_end

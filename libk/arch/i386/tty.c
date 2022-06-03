@@ -6,14 +6,16 @@
 #include <tty.h>
 #include <vga.h>
 
+#include "multiboot2.h"
+
 #define VGA_HEIGHT 25
 #define VGA_WIDTH 80
-#define VGA_MEMORY (uint16_t*)(0xb8000 + 0xC0000000)
 
+// This are initialized by tty_init:
 static size_t tty_row;
 static size_t tty_column;
 static uint8_t default_tty_color;
-static uint16_t *vga_memory = VGA_MEMORY;
+static uint16_t *vga_memory;
 
 static void
 tty_adjust_row() {
@@ -50,7 +52,9 @@ tty_putchar(char c, uint8_t tty_color) {
 }
 
 void
-tty_init() {
+tty_init(multiboot_info_t multiboot_info, uint32_t higher_half_base) {
+    vga_memory =
+        (uint16_t *)((uint32_t)multiboot_framebuffer_addr(multiboot_info.addr) + higher_half_base);
     tty_row = 0;
     tty_column = 0;
     // grey text on a beautiful blue background

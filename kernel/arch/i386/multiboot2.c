@@ -53,6 +53,21 @@ multiboot_print_info(uint32_t multiboot_info) {
     }
 }
 
+multiboot_uint64_t
+multiboot_framebuffer_addr(uint32_t multiboot_info) {
+    struct multiboot_tag *tag = (struct multiboot_tag *) (multiboot_info + 8);
+    while (tag->type != MULTIBOOT_TAG_TYPE_END) {
+        switch (tag->type) {
+            case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
+                return ((struct multiboot_tag_framebuffer *) tag)->common.framebuffer_addr;
+            default:
+                break;
+        }
+        tag = (struct multiboot_tag *)((multiboot_uint8_t *) tag + ((tag->size + 7) & ~7));
+    }
+    return 0;
+}
+
 uint32_t
 multiboot_get_first_module(uint32_t multiboot_info) {
     struct multiboot_tag *tag = (struct multiboot_tag *) (multiboot_info + 8);

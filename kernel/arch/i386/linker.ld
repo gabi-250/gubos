@@ -29,9 +29,14 @@ SECTIONS
 	*(.data.init_paging)
     }
 
-    __bootstrap_code_size = . - __kernel_physical_start;
     /* Make sure the bootstrapping logic doesn't exceed 4MB! */
-    . += 4M;
+    /*. += 4M;*/
+
+    __bootstrap_code_size = . - __kernel_physical_start;
+
+    . = 0xC0000000;
+
+    __higher_half = .;
 
     /* We want a higher-half kernel, so in the virtual address space, the
      * kernel lives at 3GB + 1MB
@@ -77,6 +82,9 @@ SECTIONS
 	*(.bss)
     }
 
+    /* Align the end of the kernel virtual address space to make it easily
+     * mappable using 4MB pages */
+    . = ALIGN(4M);
     __kernel_virtual_end = .;
     __kernel_physical_end = . - __kernel_addr_space_delta;
 }

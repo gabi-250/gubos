@@ -5,7 +5,7 @@ PREFIX := /usr/src/gubos
 INCLUDEDIR := $(PREFIX)/include
 LIBDIR := $(PREFIX)/lib
 
-CFLAGS:=$(CFLAGS) -ffreestanding -Wall -Wextra -Werror -Iinclude -lgcc
+CFLAGS:=$(CFLAGS) -ffreestanding -Wall -Wextra -Werror -Iinclude -I../kernel/include -lgcc
 LIBK_CFLAGS:=$(CFLAGS) -D__is_libk $(LDFLAGS)
 
 ARCHDIR=arch/$(HOSTARCH)
