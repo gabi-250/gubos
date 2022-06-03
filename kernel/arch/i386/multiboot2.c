@@ -6,7 +6,7 @@ void
 multiboot_print_memory_map(struct multiboot_tag *tag, multiboot_memory_map_t *mmap) {
     printk_debug("Memory map:\n");
     while ((multiboot_uint8_t *) mmap < (multiboot_uint8_t *) tag + tag->size) {
-        printk_debug("    address: %#llx | length: %llu | type: ", mmap->addr, mmap-> len);
+        printk_debug("    address: %#llx | length: %llu | type: ", mmap->addr, mmap->len);
         switch (mmap->type) {
             case MULTIBOOT_MEMORY_AVAILABLE:
                 printk_debug("available\n");
@@ -24,8 +24,16 @@ multiboot_print_memory_map(struct multiboot_tag *tag, multiboot_memory_map_t *mm
                 printk_debug("bad RAM\n");
                 break;
         }
-        mmap = (multiboot_memory_map_t *)((unsigned long) mmap + ((struct multiboot_tag_mmap *) tag)->entry_size);
+
+        multiboot_uint32_t entry_size = ((struct multiboot_tag_mmap *) tag)->entry_size;
+        mmap = (multiboot_memory_map_t *)((unsigned long) mmap + entry_size);
     }
+}
+
+void
+multiboot_print_framebuffer_info(struct multiboot_tag_framebuffer_common common) {
+    printk_debug("Framebuffer: addr=%#llx size=%u\n",
+            common.framebuffer_addr, common.size);
 }
 
 void
@@ -36,6 +44,8 @@ multiboot_print_info(uint32_t multiboot_info) {
             case MULTIBOOT_TAG_TYPE_MMAP:
                 multiboot_print_memory_map(tag, ((struct multiboot_tag_mmap *) tag)->entries);
                 break;
+            case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
+                multiboot_print_framebuffer_info(((struct multiboot_tag_framebuffer *) tag)->common);
             default:
                 break;
         }

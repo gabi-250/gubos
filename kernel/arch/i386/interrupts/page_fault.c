@@ -28,7 +28,7 @@ page_fault_handler(interrupt_state_t * state, uint32_t err_code) {
             err_code & PAGING_ERR_CODE_WR ? "write": "read",
             err_code & PAGING_ERR_CODE_US ? "user": "kernel");
 
-    if (!(err_code & PAGING_ERR_CODE_P)) {
+    if (err_code & PAGING_ERR_CODE_P) {
         // A protection fault is always an error
         if (err_code & PAGING_ERR_CODE_US) {
             printk_debug("TODO: kill the misbehaving user process");
