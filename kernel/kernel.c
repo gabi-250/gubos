@@ -11,6 +11,8 @@
 #include "kmalloc.h"
 #include "sched.h"
 
+kernel_meminfo_t KERNEL_MEMINFO;
+
 __attribute__ ((constructor)) void
 __init_kernel() {
 }
@@ -22,6 +24,7 @@ __uninit_kernel() {
 
 void
 kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
+    KERNEL_MEMINFO = meminfo;
     tty_init(multiboot_info, meminfo.higher_half_base);
     ps2_init_devices();
     if (multiboot_info.magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
@@ -30,6 +33,13 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     }
     multiboot_print_info(multiboot_info.addr);
     printk_debug("Interrupts enabled: %s\n", interrupts_enabled() ? "yes" : "no");
+    printk_debug("kernel virtual start %#x\n", meminfo.virtual_start);
+    printk_debug("kernel virtual end %#x\n", meminfo.virtual_end);
+    printk_debug("kernel physical start %#x\n", meminfo.physical_start);
+    printk_debug("kernel physical end %#x\n", meminfo.physical_end);
+    vmm_init_paging(meminfo);
+    printk_debug("done\n");
+
     pmm_init(meminfo, multiboot_info);
     kmalloc_init();
 
@@ -39,19 +49,15 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
         return;
     }
     printk_debug("module is at %#x\n", module_addr);
-    printk_debug("kernel virtual start %#x\n", meminfo.virtual_start);
-    printk_debug("kernel virtual end %#x\n", meminfo.virtual_end);
-    printk_debug("kernel physical start %#x\n", meminfo.physical_start);
-    printk_debug("kernel physical end %#x\n", meminfo.physical_end);
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 500; ++i) {
         int *x = (int *)kmalloc(sizeof(int));
         *x = 4;
         printk_debug("kmalloc'd x @ %#x. x is %d\n", (uint32_t)x, *x);
         long long *y = (long long *)kmalloc(sizeof(long long));
         *y = 4;
         printk_debug("kmalloc'd x @ %#x. y is %lld\n", y, *y);
-        kfree(x);
-        kfree(y);
+        /*kfree(x);*/
+        /*kfree(y);*/
     }
 
     init_sched(meminfo);

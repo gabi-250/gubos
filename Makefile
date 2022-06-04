@@ -13,7 +13,7 @@ GDB                    := $(HOST)-gdb --sysroot=$(SYSROOT)
 # Export all variables to make them available to sub-make
 export
 
-QEMU_FLAGS             := -d int,cpu_reset --no-reboot
+QEMU_FLAGS             := -d int,cpu_reset --no-reboot --no-shutdown
 
 .PHONY: qemu monitor debug clean $(PROJECTS) $(PROGRAMS)
 

@@ -24,6 +24,10 @@ sched_switch_task:
     mov 12(%eax), %edx
     # Update the ESP0 (the privilege level 0 stack pointer field) of the TSS
     # (located 32 bits into the structure).
+    # NOTE: TSS->ESP0 is only used when switching from user-mode to ring 0 (it
+    # represents the kernel stack of the task). The switching happens, for example,
+    # whenever a user-space task is interrupted by an interrupt (ESP0 is the stack
+    # pointer used by the interrupt handler).
     # TSS->ESP0 = next->TSS0
     lea tss, %esi
     mov %edx, 4(%esi)

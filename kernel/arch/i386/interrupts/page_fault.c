@@ -38,6 +38,6 @@ page_fault_handler(interrupt_state_t * state, uint32_t err_code) {
     } else {
         // Page not present
         // XXX: always allow writes for now
-        vmm_map_addr((void *) addr, PAGE_FLAG_WRITE);
+        vmm_map_addr((void *)addr, PAGE_FLAG_WRITE);
     }
 }
