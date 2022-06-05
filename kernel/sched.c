@@ -5,7 +5,7 @@
 #include "kernel_meminfo.h"
 #include <stddef.h>
 
-extern page_table_t KERNEL_PAGE_DIRECTORY;
+extern page_table_t ACTIVE_PAGE_DIRECTORY;
 
 typedef struct task_list {
     task_control_block_t *task;
@@ -22,7 +22,7 @@ init_sched(kernel_meminfo_t meminfo) {
     current_task = (task_control_block_t *)kmalloc(sizeof(task_control_block_t));
     current_task->pid = 0;
     current_task->kernel_stack_top = meminfo.stack_top; // XXX
-    current_task->virtual_addr_space = (uint32_t)&KERNEL_PAGE_DIRECTORY;
+    current_task->virtual_addr_space = (uint32_t)&ACTIVE_PAGE_DIRECTORY;
     current_task->esp0 = meminfo.stack_top; // XXX
 
     tasks = (task_list_t){

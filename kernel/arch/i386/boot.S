@@ -61,7 +61,7 @@ _enable_paging:
     push $__kernel_virtual_start
     push $__kernel_physical_end
     push $__kernel_physical_start
-    call init_paging
+    call paging_bootstrap
     add $24, %esp
     # Update EIP to point to a higher-half address from now on.
     jmp _higher_half

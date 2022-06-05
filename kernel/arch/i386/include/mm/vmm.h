@@ -2,57 +2,62 @@
 #define __VMM_H__
 
 #include <stdint.h>
+#include "mm/paging.h"
 
-// ======================================================================
-// Paging constants
-// ======================================================================
-// 4 MB pages
-#define KERNEL_PAGE_SIZE_4MB (1 << 22)
-// 4 KB pages
-#define KERNEL_PAGE_SIZE_4KB (1 << 12)
-#define PAGE_TABLE_SIZE      1024
-#define PAGE_DIRECTORY_START 22
-#define PAGE_TABLE_START     12
+// A virtual allocation.
+//
+// This represents one or more mapped pages, starting at the specified virtual
+// address. The allocated pages are not necessarily present in the page tables.
+//
+// NOTE: virtual_addr and physical_addr *must* be 4096 bytes aligned.
+typedef struct vmm_allocation {
+    uint32_t virtual_addr;
+    uint32_t physical_addr;
+    uint32_t page_count;
+    uint32_t flags;
+} vmm_allocation_t;
 
-// ======================================================================
-// Page table entry flags
-// ======================================================================
-// Present flag.
-#define PAGE_FLAG_PRESENT         1
-// Read/write flag. If 0, writes aren't allowed.
-#define PAGE_FLAG_WRITE          (1 << 1)
-// User/supervisor flag. If 0, user-mode accesses aren't allowed.
-#define PAGE_FLAG_USER           (1 << 2)
-// Page-level write-through flag. It (indirectly) determines the memory type
-// used to access the page referenced by this entry.
-#define PAGE_FLAG_WRITE_THROUGH  (1 << 3)
-// The cache disable flag. It (indirectly) determines the memory type used to
-// access this entry.
-#define PAGE_FLAG_CACHE_DISABLE  (1 << 4)
-// The accessed flag. If 1, the page referenced by this entry has been accessed.
-#define PAGE_FLAG_ACCESSED       (1 << 5)
-// The dirty flag. If 1, the page referenced by this entry has been written to.
-#define PAGE_FLAG_DIRTY          (1 << 6)
-// The page size flag. Must be 1 if 4M pages are in use.
-#define PAGE_FLAG_PAGE_SIZE      (1 << 7)
-// The global flag. If CR4.PGE = 1, determines whether the translation is
-// global.
-#define PAGE_FLAG_GLOBAL         (1 << 8)
+// The allocation search tree.
+typedef struct vmm_allocation_tree {
+    vmm_allocation_t alloc;
+    struct vmm_allocation_tree *left;
+    struct vmm_allocation_tree *right;
+    struct vmm_allocation_tree *parent;
+} vmm_allocation_tree_t;
 
-#define PAGE_DIRECTORY_INDEX(vaddr)   ((vaddr) >> PAGE_DIRECTORY_START)
-#define PAGE_TABLE_INDEX(vaddr)       (((vaddr) >> PAGE_TABLE_START) & ((1 << 10) - 1))
+// A list of free (unmapped) areas in some virtual address space. The free area
+// consists of page_count unmapped pages starting at a specific virtual address.
+//
+// NOTE: virtual_addr *must* be 4096 bytes aligned.
+typedef struct vmm_free_blocks {
+    uint32_t virtual_addr;
+    uint32_t page_count;
+    struct vmm_free_blocks *next;
+} vmm_free_blocks_t;
 
-typedef struct page_directory {
-    uint32_t entries[PAGE_TABLE_SIZE];
-} __attribute__ ((aligned(4096))) page_directory_t;
+typedef struct vmm_context {
+    vmm_allocation_tree_t *allocations;
+    vmm_free_blocks_t *free_blocks;
+} vmm_context_t;
 
-typedef struct page_table {
-    uint32_t entries[PAGE_TABLE_SIZE];
-} __attribute__ ((aligned(4096))) page_table_t;
+// Initialize the virtual memory manager.
+void vmm_init();
 
+// Allocate page_count consecutive pages starting at the specified virtual address.
+//
+// This maps the pages in the virtual address space of the current process,
+// returning a pointer to the beginning of the newly allocated sequence of
+// pages.
+//
+// The specified address *must* be 4096 bytes aligned.
+void * vmm_map_pages(uint32_t virtual_addr, uint32_t page_count, uint32_t flags);
 
-void vmm_init_paging();
-void vmm_set_page_directory(uint32_t);
-void vmm_map_addr(void *, uint32_t);
+// Free page_count consecutive pages starting at the specified page.
+//
+// The specified address *must* be 4096 bytes aligned.
+void vmm_unmap_pages(uint32_t virtual_addr, uint32_t page_count);
+
+// Find the allocation that corresponds to the specified address.
+vmm_allocation_t * vmm_find_allocation(uint32_t virtual_addr);
 
 #endif /* __VMM_H__ */

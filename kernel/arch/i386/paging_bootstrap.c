@@ -10,10 +10,10 @@
 //
 // NOTE: The kernel uses 4MB pages, so we only really need to use 256 out of the
 // 1024 available entries (256 * 4MB = 1GB)
-static page_table_t __attribute__((section(".data.init_paging"))) KERNEL_PAGE_DIRECTORY;
+static page_table_t __attribute__((section(".data.paging_bootstrap"))) KERNEL_PAGE_DIRECTORY;
 
-uint32_t __attribute__((section(".text.init_paging")))
-init_paging(kernel_meminfo_t meminfo) {
+uint32_t __attribute__((section(".text.paging_bootstrap")))
+paging_bootstrap(kernel_meminfo_t meminfo) {
     for (size_t i = 0; i < PAGE_TABLE_SIZE; ++i) {
         KERNEL_PAGE_DIRECTORY.entries[i] = 0;
     }

@@ -7,8 +7,8 @@
 #include "multiboot2.h"
 #include "kernel_meminfo.h"
 
-// ((1 << 32) / (1 << 25))
-// NOTE: each bit represents one 4M page.
+// ((1 << 32) / (1 << 12))
+// NOTE: each bit represents one 4KB page.
 #define MEM_BITMAP_SIZE (1 << 7)
 #define BITMAP_ENTRY_MASK UINT8_MAX
 #define KERNEL_PAGE_SIZE KERNEL_PAGE_SIZE_4KB

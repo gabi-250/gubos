@@ -8,6 +8,7 @@
 #include "ps2.h"
 #include "mm/pmm.h"
 #include "mm/vmm.h"
+#include "mm/paging.h"
 #include "kmalloc.h"
 #include "sched.h"
 
@@ -37,11 +38,12 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     printk_debug("kernel virtual end %#x\n", meminfo.virtual_end);
     printk_debug("kernel physical start %#x\n", meminfo.physical_start);
     printk_debug("kernel physical end %#x\n", meminfo.physical_end);
-    vmm_init_paging(meminfo);
+    init_paging(meminfo);
     printk_debug("done\n");
 
     pmm_init(meminfo, multiboot_info);
     kmalloc_init();
+    vmm_init();
 
     uint32_t module_addr;
     if ((module_addr = multiboot_get_first_module(multiboot_info.addr)) == 0) {

@@ -4,114 +4,286 @@
 #include <string.h>
 #include "mm/vmm.h"
 #include "mm/pmm.h"
+#include "mm/paging.h"
 #include "printk.h"
 #include "panic.h"
+#include "kmalloc.h"
+#include "kernel_meminfo.h"
 
 #define PAGE_SIZE KERNEL_PAGE_SIZE_4KB
 
-/*static bool page_aligned(void *addr) {*/
-    /*return !(((uint32_t)addr) & (PAGE_SIZE - 1));*/
-/*}*/
-
 extern kernel_meminfo_t KERNEL_MEMINFO;
 
-page_table_t KERNEL_PAGE_TABLES[PAGE_TABLE_SIZE];
-page_table_t KERNEL_PAGE_DIRECTORY;
+// The VMM state for the current task.
+static vmm_context_t VMM_CONTEXT;
 
-// Invalidate the TLB entries of the page that corresponds to the specified
-// address.
-static inline void
-invlpg(uint32_t addr) {
-    asm volatile("invlpg (%0)" ::"r" (addr) : "memory");
+static void add_allocation(uint32_t virtual_addr, uint32_t page_count, uint32_t flags);
+static void remove_allocation(vmm_allocation_tree_t *allocation);
+static void add_free_blocks(vmm_free_blocks_t *free_blocks, uint32_t virtual_addr, uint32_t page_count);
+static uint32_t remove_free_blocks(vmm_free_blocks_t *free_block, uint32_t virtual_addr, uint32_t page_count);
+static vmm_allocation_t * find_allocation(vmm_allocation_tree_t *allocations, uint32_t virtual_addr);
+
+void
+vmm_init() {
+    VMM_CONTEXT.allocations = (vmm_allocation_tree_t *)kmalloc(sizeof(vmm_allocation_tree_t));
+    vmm_allocation_t alloc = {
+        .virtual_addr = 0,
+        .physical_addr = 0,
+        .flags = 0,
+    };
+
+    // TODO traverse kernel meminfo and multiboot info to create the initial
+    // allocations
+    *VMM_CONTEXT.allocations = (vmm_allocation_tree_t){
+        .alloc = alloc,
+        .left = NULL,
+        .right = NULL,
+    };
 }
 
-static inline uint32_t
-virtual_to_physical(uint32_t addr) {
-    // Subtract (virtual_start - physical_start) to get the physical address.
-    uint32_t addr_space_delta = (KERNEL_MEMINFO.virtual_start - KERNEL_MEMINFO.physical_start);
-    return addr - addr_space_delta;
+void *
+vmm_map_pages(uint32_t virtual_addr, uint32_t page_count, uint32_t flags) {
+    // TODO handle flags
+    if (!paging_is_aligned(virtual_addr)) {
+        PANIC("cannot map unaligned address: %#x", virtual_addr);
+    }
+
+    if (!VMM_CONTEXT.free_blocks) {
+        // XXX handle this more gracefully
+        PANIC("Out of memory");
+    }
+
+    uint32_t addr = remove_free_blocks(VMM_CONTEXT.free_blocks, virtual_addr, page_count);
+    add_allocation(addr, page_count, flags);
+
+    return (void *)addr;
 }
 
-static inline uint32_t
-physical_to_virtual(uint32_t addr) {
-    // Add (virtual_start - physical_start) to get the virtual address.
-    uint32_t addr_space_delta = (KERNEL_MEMINFO.virtual_start - KERNEL_MEMINFO.physical_start);
-    return addr + addr_space_delta;
+void
+vmm_unmap_pages(uint32_t virtual_addr, uint32_t page_count) {
+    if (!paging_is_aligned(virtual_addr)) {
+        PANIC("cannot unmap unaligned address: %#x", virtual_addr);
+    }
+
+    // Update VMM_CONTEXT.free_blocks
+    add_free_blocks(VMM_CONTEXT.free_blocks, virtual_addr, page_count);
+
+    // Update VMM_CONTEXT.allocations
+    vmm_allocation_tree_t *allocations = VMM_CONTEXT.allocations;
+
+    while (allocations) {
+        if (virtual_addr == allocations->alloc.virtual_addr) {
+            if (page_count < allocations->alloc.virtual_addr) {
+                // Shift the allocation
+                allocations->alloc.virtual_addr += PAGE_SIZE * page_count;
+                allocations->alloc.page_count -= page_count;
+            } else if (page_count == allocations->alloc.virtual_addr) {
+                // Delete the node alogether
+                remove_allocation(allocations);
+            } else {
+                PANIC("cannot unamp more than has been mapped");
+            }
+
+            return;
+        } else if (virtual_addr < allocations->alloc.virtual_addr) {
+            allocations = allocations->left;
+        } else {
+            allocations = allocations->right;
+        }
+    }
+
+    PANIC("allocation to unmap not found in allocation tree");
 }
 
-// The format of a page directory entry (with 4KB pages) is:
-// | 31                   12| 11     8 | 7 | 6   | 5 | 4   | 3   | 2   | 1   | 0 |
-// |-----------------------------------------------------------------------------|
-// | address of page table  | ignored  | 0 | ign | A | PCD | PWT | U/S | R/W | P |
-//
-// The format of a page table entry (with 4KB pages) is:
-// | 31                   12| 11     9 | 8 | 7   | 6 | 5  | 4   | 3   | 2   | 1   | 0 |
-// |----------------------------------------------------------------------------------|
-// | address of 4KB page    | ignored  | G | PAT | D | A  | PCT | PWT | U/S | R/W | P |
+vmm_allocation_t *
+vmm_find_allocation(uint32_t virtual_addr) {
+    return find_allocation(VMM_CONTEXT.allocations, virtual_addr);
+}
+
 static void
-vmm_map_virtual_to_physical(uint32_t virtual_addr, uint32_t physical_addr, uint32_t flags) {
-    page_table_t *page_table = &KERNEL_PAGE_TABLES[PAGE_DIRECTORY_INDEX(virtual_addr)];
-    // page_table_addr is 4096 bytes aligned, so no need to clear the
-    // lower 12 bits where the flags go
-    uint32_t page_table_addr = virtual_to_physical((uint32_t)page_table);
-    uint32_t page_start_addr = (physical_addr >> 12) << 12;
-
-    KERNEL_PAGE_DIRECTORY.entries[PAGE_DIRECTORY_INDEX(virtual_addr)] =
-        page_table_addr | flags;
-    page_table->entries[PAGE_TABLE_INDEX(virtual_addr)] =
-        page_start_addr | flags;
-}
-
-void
-vmm_init_paging() {
-    memset(KERNEL_PAGE_DIRECTORY.entries, sizeof(KERNEL_PAGE_DIRECTORY.entries), 0);
-    for (size_t i = 0; i < PAGE_TABLE_SIZE; ++i) {
-        memset(KERNEL_PAGE_TABLES[i].entries, sizeof(KERNEL_PAGE_TABLES[i].entries), 0);
+remove_allocation(vmm_allocation_tree_t *allocation) {
+    if (allocation->parent) {
+        if (allocation->parent->left == allocation) {
+            allocation->parent->left = allocation->left;
+        } else {
+            allocation->parent->right = allocation->left;
+        }
+    } else {
+        // Remove the root
+        VMM_CONTEXT.allocations = allocation->left;
     }
 
-    uint32_t higher_half_base = KERNEL_MEMINFO.higher_half_base;
-    uint32_t virtual_end = KERNEL_MEMINFO.virtual_end;
-    for (uint64_t i = 0; higher_half_base + i * KERNEL_PAGE_SIZE_4KB < virtual_end; ++i) {
-        uint32_t virtual_addr = higher_half_base + i * KERNEL_PAGE_SIZE_4KB;
-        uint32_t physical_addr = i * KERNEL_PAGE_SIZE_4KB;
+    vmm_allocation_tree_t * node = allocation->left;
+    while (node->right) {
+        node = node->right;
+    }
+    node->right = allocation->right;
 
-        vmm_map_virtual_to_physical(virtual_addr, physical_addr, PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);
+    kfree(allocation);
+}
+
+static void
+add_allocation(uint32_t virtual_addr, uint32_t page_count, uint32_t flags) {
+    vmm_allocation_tree_t *allocations = VMM_CONTEXT.allocations;
+    vmm_allocation_tree_t *prev = NULL;
+    while (allocations) {
+        prev = allocations;
+        if (virtual_addr > allocations->alloc.virtual_addr) {
+            allocations = allocations->right;
+        } else {
+            allocations = allocations->left;
+        }
     }
 
-    uint32_t cr3 = virtual_to_physical((uint32_t)&KERNEL_PAGE_DIRECTORY);
-    // The last 4MB of virtual address space is reserved for bookkeeping: we map
-    // the last page directory entry to the page directory itself (rather than
-    // some other physical address), which makes it easy to access and modify
-    // all the paging structures can (this is achieved by writing to a virtual
-    // address which has all the 'directory' bits set to 1). This solves the
-    // "chicken or the egg" problem that happens whenever the VMM creates a new
-    // page to handle a mapping request, but the new page frame returned by the
-    // PMM does not yet have a virtual mapping (so it can't be written to).
-    //
-    // TODO: implement what's described here.
-    KERNEL_PAGE_DIRECTORY.entries[PAGE_TABLE_SIZE - 1] = cr3 | PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE;
+    if (!prev) {
+        PANIC("out of memory");
+    }
 
-    vmm_set_page_directory(cr3);
+    vmm_allocation_tree_t *new_node = (vmm_allocation_tree_t *)kmalloc(sizeof(vmm_allocation_tree_t));
+    vmm_allocation_t alloc = {
+        .virtual_addr = virtual_addr,
+        .physical_addr = 0,
+        .page_count = page_count,
+        .flags = flags,
+    };
+    *new_node = (vmm_allocation_tree_t){
+        .alloc = alloc,
+        .left = NULL,
+        .right = NULL,
+    };
+
+    new_node->parent = prev;
+    if (virtual_addr > prev->alloc.virtual_addr) {
+        prev->right = new_node;
+    } else {
+        prev->left = new_node;
+    }
 }
 
-// Load CR3 with the **physical** address of the page directory.
-void
-vmm_set_page_directory(uint32_t addr) {
-    asm volatile("mov %0, %%eax\n\t"
-                 "mov %%eax, %%cr3" ::"r" (addr) : "memory");
+static uint32_t
+remove_free_blocks(vmm_free_blocks_t *free_block, uint32_t virtual_addr, uint32_t page_count) {
+    vmm_free_blocks_t *prev = NULL;
+
+    while (free_block) {
+        if (virtual_addr && free_block->virtual_addr != virtual_addr) {
+            continue;
+        }
+
+        if (free_block->page_count > page_count) {
+            uint32_t addr = free_block->virtual_addr;
+            free_block->page_count -= page_count;
+            free_block->virtual_addr += page_count * PAGE_SIZE;
+
+            return addr;
+        } else if (free_block->page_count == page_count) {
+            uint32_t addr = free_block->virtual_addr;
+            if (prev) {
+                prev->next = free_block->next;
+            } else {
+                VMM_CONTEXT.free_blocks = free_block->next;
+                kfree(free_block);
+            }
+
+            return addr;
+        }
+
+        prev = free_block;
+        free_block = free_block->next;
+    }
+
+    PANIC("could not find %u consecutive free pages", page_count);
 }
 
-void
-vmm_map_addr(void *addr, uint32_t flags) {
-    // The caller must ensure the address is page-aligned.
-    /*if (!page_aligned(addr)) {*/
-        /*PANIC("[VMM]: failed to map unaligned addr: %#x\n", addr);*/
-        /*asm volatile("hlt");*/
-        /*return;*/
-    /*}*/
+static void
+merge_or_insert_free_blocks(vmm_free_blocks_t *free_blocks, uint32_t virtual_addr, uint32_t page_count) {
+    bool blocks_merged = false;
+    if (free_blocks) {
+        // Merge the existing free blocks with the newly freed block if they
+        // form a contiguous block.
+        if (free_blocks->virtual_addr + page_count * PAGE_SIZE == virtual_addr) {
+            free_blocks->page_count += page_count;
+            blocks_merged = true;
+        }
 
-    uint32_t physical_addr = (uint32_t)pmm_alloc_page();
-    vmm_map_virtual_to_physical((uint32_t)addr, physical_addr, flags | PAGE_FLAG_PRESENT);
+        if (free_blocks->next) {
+            uint32_t next_free_addr = free_blocks->next->virtual_addr;
 
-    printk_debug("[VMM]: mapped %#x (virtual) -> %#x (physical)\n", addr, physical_addr);
+            if (free_blocks->virtual_addr + page_count * PAGE_SIZE == next_free_addr) {
+                free_blocks->page_count += free_blocks->next->page_count;
+                vmm_free_blocks_t *next = free_blocks->next;
+                free_blocks->next = free_blocks->next->next;
+                kfree(next);
+                blocks_merged = true;
+            }
+        }
+    }
+
+    if (!blocks_merged) {
+        vmm_free_blocks_t *new_block = (vmm_free_blocks_t *)kmalloc(sizeof(vmm_free_blocks_t));
+        *new_block = (vmm_free_blocks_t){
+            .virtual_addr = virtual_addr,
+            .page_count = page_count,
+            .next = free_blocks->next,
+        };
+        free_blocks->next = new_block;
+    }
+}
+
+static void
+add_free_blocks(vmm_free_blocks_t *free_blocks, uint32_t virtual_addr, uint32_t page_count) {
+    vmm_free_blocks_t *prev = NULL;
+    while (free_blocks && virtual_addr < free_blocks->virtual_addr) {
+        prev = free_blocks;
+        free_blocks = free_blocks->next;
+    }
+
+    if (free_blocks) {
+        if (prev) {
+            merge_or_insert_free_blocks(prev, virtual_addr, page_count);
+        } else {
+            if (virtual_addr + page_count * PAGE_SIZE == free_blocks->virtual_addr) {
+                // Merge the existing free blocks with the newly freed block if they
+                // form a contiguous block.
+                free_blocks->page_count += page_count;
+            } else {
+                // The new block is the new head of the list
+                VMM_CONTEXT.free_blocks = (vmm_free_blocks_t *)kmalloc(sizeof(vmm_free_blocks_t));
+                *VMM_CONTEXT.free_blocks = (vmm_free_blocks_t){
+                    .virtual_addr = virtual_addr,
+                    .page_count = page_count,
+                    .next = free_blocks,
+                };
+            }
+        }
+    } else {
+        // virtual_addr is greater than any of the other free addresses.
+        if (prev) {
+            merge_or_insert_free_blocks(prev, virtual_addr, page_count);
+        } else {
+            // VMM_CONTEXT.free_blocks must've been NULL to begin with
+            VMM_CONTEXT.free_blocks = (vmm_free_blocks_t *)kmalloc(sizeof(vmm_free_blocks_t));
+            *VMM_CONTEXT.free_blocks = (vmm_free_blocks_t){
+                .virtual_addr = virtual_addr,
+                .page_count = page_count,
+                .next = NULL,
+            };
+        }
+    }
+}
+
+static vmm_allocation_t *
+find_allocation(vmm_allocation_tree_t *allocations, uint32_t virtual_addr) {
+    while (allocations) {
+        uint32_t current_block = allocations->alloc.virtual_addr;
+        uint32_t page_count = allocations->alloc.page_count;
+        if (virtual_addr >= current_block && virtual_addr < current_block + page_count * PAGE_SIZE) {
+            return &allocations->alloc;
+        } else if (virtual_addr < current_block) {
+            allocations = allocations->left;
+        } else {
+            allocations = allocations->right;
+        }
+    }
+    // Not in tree:
+    return NULL;
 }

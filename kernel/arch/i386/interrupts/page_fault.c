@@ -3,6 +3,8 @@
 #include "printk.h"
 #include "panic.h"
 #include "mm/vmm.h"
+#include "mm/pmm.h"
+#include "mm/paging.h"
 
 // Get the (linear) address that triggered the page fault.
 static uint32_t
@@ -38,6 +40,8 @@ page_fault_handler(interrupt_state_t * state, uint32_t err_code) {
     } else {
         // Page not present
         // XXX: always allow writes for now
-        vmm_map_addr((void *)addr, PAGE_FLAG_WRITE);
+        uint32_t physical_addr = (uint32_t)pmm_alloc_page();
+        // alloc = vmm_find_allocation(addr);
+        paging_map_virtual_to_physical(addr, physical_addr, PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);
     }
 }

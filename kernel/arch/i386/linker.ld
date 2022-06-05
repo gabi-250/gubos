@@ -19,14 +19,14 @@ SECTIONS
 	*(.data.boot)
     }
 
-    .text.init_paging ALIGN(4K):
+    .text.paging_bootstrap ALIGN(4K):
     {
-	*(.text.init_paging)
+	*(.text.paging_bootstrap)
     }
 
-    .data.init_paging ALIGN(4K):
+    .data.paging_bootstrap ALIGN(4K):
     {
-	*(.data.init_paging)
+	*(.data.paging_bootstrap)
     }
 
     /* Make sure the bootstrapping logic doesn't exceed 4MB! */
