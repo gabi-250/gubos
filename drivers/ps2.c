@@ -1,9 +1,9 @@
 #include <stdint.h>
 #include <stdbool.h>
-#include "ps2.h"
-#include "portio.h"
-#include "pic.h"
-#include "printk.h"
+#include <ps2.h>
+#include <portio.h>
+#include <pic.h>
+#include <printk.h>
 
 struct scancode_queue_context {
     uint32_t start;

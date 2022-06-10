@@ -1,6 +1,6 @@
 #include <stdint.h>
-#include "kmalloc.h"
-#include "mm/vmm.h"
+#include <kmalloc.h>
+#include <mm/vmm.h>
 
 #define KERNEL_PAGE_SIZE KERNEL_PAGE_SIZE_4KB
 
@@ -12,7 +12,7 @@ kmalloc_init() {
     // TODO: set the [KERNEL_HEAP_START, KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
     // range as in-use.
     KMALLOC_HEAD = (kmalloc_header_t *)KERNEL_HEAP_START;
-    *KMALLOC_HEAD = (kmalloc_header_t){
+    *KMALLOC_HEAD = (kmalloc_header_t) {
         .size = KERNEL_HEAP_SIZE - sizeof(kmalloc_header_t),
         .next = NULL,
     };
@@ -39,7 +39,7 @@ kmalloc(size_t size) {
             kmalloc_header_t *new_region =
                 (kmalloc_header_t *)((char *)free_region + sizeof(kmalloc_header_t) + size);
 
-            *new_region = (kmalloc_header_t){
+            *new_region = (kmalloc_header_t) {
                 .size = remaining - sizeof(kmalloc_header_t),
                 .next = free_region->next,
             };

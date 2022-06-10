@@ -1,16 +1,16 @@
 #include <stdbool.h>
 
-#include "tty.h"
-#include "multiboot2.h"
-#include "kernel_meminfo.h"
-#include "printk.h"
-#include "flags.h"
-#include "ps2.h"
-#include "mm/pmm.h"
-#include "mm/vmm.h"
-#include "mm/paging.h"
-#include "kmalloc.h"
-#include "sched.h"
+#include <tty.h>
+#include <multiboot2.h>
+#include <mm/meminfo.h>
+#include <printk.h>
+#include <flags.h>
+#include <ps2.h>
+#include <mm/pmm.h>
+#include <mm/vmm.h>
+#include <mm/paging.h>
+#include <kmalloc.h>
+#include <sched.h>
 
 kernel_meminfo_t KERNEL_MEMINFO;
 
@@ -41,7 +41,7 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     init_paging(meminfo);
     printk_debug("done\n");
 
-    pmm_init(meminfo, multiboot_info);
+    pmm_init(multiboot_info);
     kmalloc_init();
     vmm_init();
 

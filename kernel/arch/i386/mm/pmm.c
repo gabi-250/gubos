@@ -1,17 +1,21 @@
 #include <stdint.h>
 #include <stddef.h>
-#include "panic.h"
-#include "mm/pmm.h"
-#include "mm/vmm.h"
-#include "kmalloc.h"
-#include "multiboot2.h"
-#include "kernel_meminfo.h"
+
+#include <panic.h>
+#include <kmalloc.h>
+#include <multiboot2.h>
+
+#include <mm/meminfo.h>
+#include <mm/pmm.h>
+#include <mm/vmm.h>
 
 // ((1 << 32) / (1 << 12))
 // NOTE: each bit represents one 4KB page.
 #define MEM_BITMAP_SIZE (1 << 7)
 #define BITMAP_ENTRY_MASK UINT8_MAX
 #define KERNEL_PAGE_SIZE KERNEL_PAGE_SIZE_4KB
+
+extern kernel_meminfo_t KERNEL_MEMINFO;
 
 static uint8_t MEM_BITMAP[MEM_BITMAP_SIZE];
 
@@ -37,11 +41,11 @@ pmm_mark_addr_free(uint32_t addr) {
 }
 
 void
-pmm_init(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
+pmm_init(multiboot_info_t multiboot_info) {
     // Mark the kernel physical address range as used:
-    pmm_mark_range_used(meminfo.physical_start, meminfo.physical_end);
+    pmm_mark_range_used(KERNEL_MEMINFO.physical_start, KERNEL_MEMINFO.physical_end);
     // Mark the kernel heap address range as used:
-    uint32_t addr_space_delta = (meminfo.virtual_start - meminfo.physical_start);
+    uint32_t addr_space_delta = (KERNEL_MEMINFO.virtual_start - KERNEL_MEMINFO.physical_start);
     uint32_t heap_start = KERNEL_HEAP_START - addr_space_delta;
     uint32_t heap_end = KERNEL_HEAP_START + KERNEL_HEAP_SIZE - 1 - addr_space_delta;
     pmm_mark_range_used(heap_start, heap_end);
@@ -66,7 +70,8 @@ pmm_init(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
                 pmm_mark_range_used(mmap->addr, mmap->addr + mmap->len);
                 break;
         }
-        mmap = (multiboot_memory_map_t *)((unsigned long) mmap + ((struct multiboot_tag_mmap *) tag)->entry_size);
+        mmap = (multiboot_memory_map_t *)((unsigned long) mmap + ((struct multiboot_tag_mmap *)
+                                          tag)->entry_size);
     }
 }
 

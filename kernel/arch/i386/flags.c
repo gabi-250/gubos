@@ -1,13 +1,14 @@
 #include <stdint.h>
 #include <stdbool.h>
-#include "flags.h"
+
+#include <flags.h>
 
 uint32_t
 cpu_flags() {
     uint32_t flags = 0;
     asm volatile("pushf\n\t"
                  "pop %0"
-                  : "=g"(flags));
+                 : "=g"(flags));
     return flags;
 }
 

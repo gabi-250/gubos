@@ -6,7 +6,7 @@
 #include <tty.h>
 #include <vga.h>
 
-#include "multiboot2.h"
+#include <multiboot2.h>
 
 #define VGA_HEIGHT 25
 #define VGA_WIDTH 80
@@ -54,7 +54,8 @@ tty_putchar(char c, uint8_t tty_color) {
 void
 tty_init(multiboot_info_t multiboot_info, uint32_t higher_half_base) {
     vga_memory =
-        (uint16_t *)((uint32_t)multiboot_framebuffer_addr(multiboot_info.addr) + higher_half_base);
+        (uint16_t *)((uint32_t)multiboot_framebuffer_addr(multiboot_info.addr) +
+                     higher_half_base);
     tty_row = 0;
     tty_column = 0;
     // grey text on a beautiful blue background

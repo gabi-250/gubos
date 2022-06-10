@@ -1,6 +1,6 @@
 #include <stdint.h>
-#include "pic.h"
-#include "portio.h"
+#include <pic.h>
+#include <portio.h>
 
 void
 pic_init() {

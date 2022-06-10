@@ -3,11 +3,12 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "mm/paging.h"
-#include "mm/vmm.h"
-#include "mm/pmm.h"
-#include "printk.h"
-#include "panic.h"
+#include <printk.h>
+#include <panic.h>
+
+#include <mm/paging.h>
+#include <mm/vmm.h>
+#include <mm/pmm.h>
 
 #define PAGE_SIZE KERNEL_PAGE_SIZE_4KB
 
@@ -19,14 +20,16 @@ page_table_t ACTIVE_PAGE_DIRECTORY;
 static inline uint32_t
 virtual_to_physical(uint32_t addr) {
     // Subtract (virtual_start - physical_start) to get the physical address.
-    uint32_t addr_space_delta = (KERNEL_MEMINFO.virtual_start - KERNEL_MEMINFO.physical_start);
+    uint32_t addr_space_delta = (KERNEL_MEMINFO.virtual_start -
+                                 KERNEL_MEMINFO.physical_start);
     return addr - addr_space_delta;
 }
 
 static inline uint32_t
 physical_to_virtual(uint32_t addr) {
     // Add (virtual_start - physical_start) to get the virtual address.
-    uint32_t addr_space_delta = (KERNEL_MEMINFO.virtual_start - KERNEL_MEMINFO.physical_start);
+    uint32_t addr_space_delta = (KERNEL_MEMINFO.virtual_start -
+                                 KERNEL_MEMINFO.physical_start);
     return addr + addr_space_delta;
 }
 
@@ -43,7 +46,8 @@ init_paging() {
         uint32_t virtual_addr = higher_half_base + i * KERNEL_PAGE_SIZE_4KB;
         uint32_t physical_addr = i * KERNEL_PAGE_SIZE_4KB;
 
-        paging_map_virtual_to_physical(virtual_addr, physical_addr, PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);
+        paging_map_virtual_to_physical(virtual_addr, physical_addr,
+                                       PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);
     }
 
     uint32_t cr3 = virtual_to_physical((uint32_t)&ACTIVE_PAGE_DIRECTORY);
@@ -57,7 +61,8 @@ init_paging() {
     // PMM does not yet have a virtual mapping (so it can't be written to).
     //
     // TODO: implement what's described here.
-    ACTIVE_PAGE_DIRECTORY.entries[PAGE_TABLE_SIZE - 1] = cr3 | PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE;
+    ACTIVE_PAGE_DIRECTORY.entries[PAGE_TABLE_SIZE - 1] = cr3 | PAGE_FLAG_PRESENT |
+            PAGE_FLAG_WRITE;
 
     paging_set_page_directory(cr3);
 }
@@ -70,7 +75,8 @@ paging_set_page_directory(uint32_t addr) {
 }
 
 void
-paging_map_virtual_to_physical(uint32_t virtual_addr, uint32_t physical_addr, uint32_t flags) {
+paging_map_virtual_to_physical(uint32_t virtual_addr, uint32_t physical_addr,
+                               uint32_t flags) {
     page_table_t *page_table = &KERNEL_PAGE_TABLES[PAGE_DIRECTORY_INDEX(virtual_addr)];
     // page_table_addr is 4096 bytes aligned, so no need to clear the
     // lower 12 bits where the flags go

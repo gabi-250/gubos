@@ -1,9 +1,9 @@
-#include "printk.h"
-#include "itoa.h"
-#include "tty.h"
-#include "vga.h"
-#include "string.h"
-#include "errno.h"
+#include <printk.h>
+#include <itoa.h>
+#include <tty.h>
+#include <vga.h>
+#include <string.h>
+#include <errno.h>
 
 #include <limits.h>
 #include <stdbool.h>
@@ -50,8 +50,8 @@ log_level_to_vga_color(uint8_t log_level) {
 }
 
 static size_t
-print(uint8_t color, const char* data, size_t length) {
-    const unsigned char* bytes = (const unsigned char*) data;
+print(uint8_t color, const char *data, size_t length) {
+    const unsigned char *bytes = (const unsigned char *) data;
     size_t i = 0;
     while (i < length && putchar(color, bytes[i])) {
         ++i;

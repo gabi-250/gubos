@@ -17,7 +17,7 @@ typedef struct kmalloc_header {
 // Map all the heap pages. This should be called before any calls to kmalloc or
 // kfree.
 void kmalloc_init();
-void * kmalloc(size_t);
+void *kmalloc(size_t);
 void kfree(void *);
 
 #endif /* __KMALLOC_H__ */

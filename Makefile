@@ -15,7 +15,7 @@ export
 
 QEMU_FLAGS             := -d int,cpu_reset --no-reboot --no-shutdown
 
-.PHONY: qemu monitor debug clean $(PROJECTS) $(PROGRAMS)
+.PHONY: qemu monitor debug clean fmt $(PROJECTS) $(PROGRAMS)
 
 $(GUBOS): $(PROJECTS) $(PROGRAMS)
 	./scripts/build.sh
@@ -36,6 +36,14 @@ debug: $(GUBOS)
 		--eval-command="break _start" \
 		--eval-command="break kernel_main" \
 		./build/boot/gubos.kernel
+fmt:
+	astyle \
+		--break-return-type \
+		--align-pointer=name \
+		--style=attach \
+		--indent-switches \
+		--max-code-length=100 \
+		--recursive './*.c,*.h' \
 
 $(PROJECTS):
 ifeq ($(MAKECMDGOALS), clean)

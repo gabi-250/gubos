@@ -2,13 +2,13 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include "mm/vmm.h"
-#include "mm/pmm.h"
-#include "mm/paging.h"
-#include "printk.h"
-#include "panic.h"
-#include "kmalloc.h"
-#include "kernel_meminfo.h"
+#include <mm/vmm.h>
+#include <mm/pmm.h>
+#include <mm/paging.h>
+#include <printk.h>
+#include <panic.h>
+#include <kmalloc.h>
+#include <mm/meminfo.h>
 
 #define PAGE_SIZE KERNEL_PAGE_SIZE_4KB
 
@@ -17,10 +17,14 @@ extern kernel_meminfo_t KERNEL_MEMINFO;
 // The VMM state for the current task.
 static vmm_context_t VMM_CONTEXT;
 
-static void add_allocation(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t page_count, uint32_t flags);
-static void remove_allocation(vmm_context_t *vmm_context, vmm_allocation_tree_t *allocation);
-static void add_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t page_count);
-static uint32_t remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t page_count);
+static void add_allocation(vmm_context_t *vmm_context, uint32_t virtual_addr,
+                           uint32_t page_count, uint32_t flags);
+static void remove_allocation(vmm_context_t *vmm_context,
+                              vmm_allocation_tree_t *allocation);
+static void add_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
+                            uint32_t page_count);
+static uint32_t remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
+                                   uint32_t page_count);
 
 void
 vmm_init() {
@@ -33,7 +37,7 @@ vmm_init() {
 
     // TODO traverse kernel meminfo and multiboot info to create the initial
     // allocations
-    *VMM_CONTEXT.allocations = (vmm_allocation_tree_t){
+    *VMM_CONTEXT.allocations = (vmm_allocation_tree_t) {
         .alloc = alloc,
         .left = NULL,
         .right = NULL,
@@ -41,7 +45,8 @@ vmm_init() {
 }
 
 void *
-vmm_map_pages(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t page_count, uint32_t flags) {
+vmm_map_pages(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t page_count,
+              uint32_t flags) {
     // TODO handle flags
     if (!paging_is_aligned(virtual_addr)) {
         PANIC("cannot map unaligned address: %#x", virtual_addr);
@@ -101,7 +106,8 @@ vmm_find_allocation(vmm_context_t *vmm_context, uint32_t virtual_addr) {
     while (allocations) {
         uint32_t current_block = allocations->alloc.virtual_addr;
         uint32_t page_count = allocations->alloc.page_count;
-        if (virtual_addr >= current_block && virtual_addr < current_block + page_count * PAGE_SIZE) {
+        if (virtual_addr >= current_block
+                && virtual_addr < current_block + page_count * PAGE_SIZE) {
             return &allocations->alloc;
         } else if (virtual_addr < current_block) {
             allocations = allocations->left;
@@ -126,7 +132,7 @@ remove_allocation(vmm_context_t *vmm_context, vmm_allocation_tree_t *allocation)
         vmm_context->allocations = allocation->left;
     }
 
-    vmm_allocation_tree_t * node = allocation->left;
+    vmm_allocation_tree_t *node = allocation->left;
     while (node->right) {
         node = node->right;
     }
@@ -136,7 +142,8 @@ remove_allocation(vmm_context_t *vmm_context, vmm_allocation_tree_t *allocation)
 }
 
 static void
-add_allocation(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t page_count, uint32_t flags) {
+add_allocation(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t page_count,
+               uint32_t flags) {
     vmm_allocation_tree_t *allocations = vmm_context->allocations;
     vmm_allocation_tree_t *prev = NULL;
     while (allocations) {
@@ -152,14 +159,15 @@ add_allocation(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t page_
         PANIC("out of memory");
     }
 
-    vmm_allocation_tree_t *new_node = (vmm_allocation_tree_t *)kmalloc(sizeof(vmm_allocation_tree_t));
+    vmm_allocation_tree_t *new_node = (vmm_allocation_tree_t *)kmalloc(sizeof(
+                                          vmm_allocation_tree_t));
     vmm_allocation_t alloc = {
         .virtual_addr = virtual_addr,
         .physical_addr = 0,
         .page_count = page_count,
         .flags = flags,
     };
-    *new_node = (vmm_allocation_tree_t){
+    *new_node = (vmm_allocation_tree_t) {
         .alloc = alloc,
         .left = NULL,
         .right = NULL,
@@ -174,7 +182,8 @@ add_allocation(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t page_
 }
 
 static uint32_t
-remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t page_count) {
+remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
+                   uint32_t page_count) {
     vmm_free_blocks_t *free_blocks = vmm_context->free_blocks;
     vmm_free_blocks_t *prev = NULL;
 
@@ -209,7 +218,8 @@ remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t p
 }
 
 static void
-merge_or_insert_free_blocks(vmm_free_blocks_t *free_blocks, uint32_t virtual_addr, uint32_t page_count) {
+merge_or_insert_free_blocks(vmm_free_blocks_t *free_blocks, uint32_t virtual_addr,
+                            uint32_t page_count) {
     bool blocks_merged = false;
     if (free_blocks) {
         // Merge the existing free blocks with the newly freed block if they
@@ -234,7 +244,7 @@ merge_or_insert_free_blocks(vmm_free_blocks_t *free_blocks, uint32_t virtual_add
 
     if (!blocks_merged) {
         vmm_free_blocks_t *new_block = (vmm_free_blocks_t *)kmalloc(sizeof(vmm_free_blocks_t));
-        *new_block = (vmm_free_blocks_t){
+        *new_block = (vmm_free_blocks_t) {
             .virtual_addr = virtual_addr,
             .page_count = page_count,
             .next = free_blocks->next,
@@ -264,7 +274,7 @@ add_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t page
             } else {
                 // The new block is the new head of the list
                 vmm_context->free_blocks = (vmm_free_blocks_t *)kmalloc(sizeof(vmm_free_blocks_t));
-                *vmm_context->free_blocks = (vmm_free_blocks_t){
+                *vmm_context->free_blocks = (vmm_free_blocks_t) {
                     .virtual_addr = virtual_addr,
                     .page_count = page_count,
                     .next = free_blocks,
@@ -278,7 +288,7 @@ add_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t page
         } else {
             // vmm_context->free_blocks must've been NULL to begin with
             vmm_context->free_blocks = (vmm_free_blocks_t *)kmalloc(sizeof(vmm_free_blocks_t));
-            *vmm_context->free_blocks = (vmm_free_blocks_t){
+            *vmm_context->free_blocks = (vmm_free_blocks_t) {
                 .virtual_addr = virtual_addr,
                 .page_count = page_count,
                 .next = NULL,

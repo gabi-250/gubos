@@ -1,6 +1,6 @@
 #include <stdint.h>
-#include "multiboot2.h"
-#include "printk.h"
+#include <multiboot2.h>
+#include <printk.h>
 
 void
 multiboot_print_memory_map(struct multiboot_tag *tag, multiboot_memory_map_t *mmap) {
@@ -33,7 +33,7 @@ multiboot_print_memory_map(struct multiboot_tag *tag, multiboot_memory_map_t *mm
 void
 multiboot_print_framebuffer_info(struct multiboot_tag_framebuffer_common common) {
     printk_debug("Framebuffer: addr=%#llx size=%u\n",
-            common.framebuffer_addr, common.size);
+                 common.framebuffer_addr, common.size);
 }
 
 void

@@ -12,15 +12,15 @@ enum printk_log_level {
 };
 
 // Print a kernel log message with the specified log level.
-int printk(uint8_t log_level, const char*, ...);
+int printk(uint8_t log_level, const char *, ...);
 int vprintk(uint8_t log_level, const char *, va_list);
 // Print a kernel debug message.
-int printk_debug(const char*, ...);
+int printk_debug(const char *, ...);
 // Print a kernel info message.
-int printk_info(const char*, ...);
+int printk_info(const char *, ...);
 // Print a kernel warning message.
-int printk_warn(const char*, ...);
+int printk_warn(const char *, ...);
 // Print a kernel error message.
-int printk_err(const char*, ...);
+int printk_err(const char *, ...);
 
 #endif /* __PRINTK_H__ */

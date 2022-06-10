@@ -50,7 +50,8 @@ void vmm_init();
 // pages.
 //
 // The specified address *must* be 4096 bytes aligned.
-void * vmm_map_pages(vmm_context_t *, uint32_t virtual_addr, uint32_t page_count, uint32_t flags);
+void *vmm_map_pages(vmm_context_t *, uint32_t virtual_addr, uint32_t page_count,
+                    uint32_t flags);
 
 // Free page_count consecutive pages starting at the specified page.
 //
@@ -58,6 +59,6 @@ void * vmm_map_pages(vmm_context_t *, uint32_t virtual_addr, uint32_t page_count
 void vmm_unmap_pages(vmm_context_t *, uint32_t virtual_addr, uint32_t page_count);
 
 // Find the allocation that corresponds to the specified address.
-vmm_allocation_t * vmm_find_allocation(vmm_context_t *, uint32_t virtual_addr);
+vmm_allocation_t *vmm_find_allocation(vmm_context_t *, uint32_t virtual_addr);
 
 #endif /* __VMM_H__ */

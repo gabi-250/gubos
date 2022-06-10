@@ -1,5 +1,5 @@
 #include <stdbool.h>
-#include "string.h"
+#include <string.h>
 
 size_t
 strlen(const char *s) {

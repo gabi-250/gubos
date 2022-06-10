@@ -1,7 +1,8 @@
 #include <panic.h>
 #include <printk.h>
 
-void  __attribute__ ((noreturn))
+void
+__attribute__ ((noreturn))
 panic(const char *file, int line, const char *fmt, ...) {
     va_list params;
     va_start(params, fmt);
