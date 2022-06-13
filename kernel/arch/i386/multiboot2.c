@@ -32,8 +32,9 @@ multiboot_print_memory_map(struct multiboot_tag *tag, multiboot_memory_map_t *mm
 
 void
 multiboot_print_framebuffer_info(struct multiboot_tag_framebuffer_common common) {
-    printk_debug("Framebuffer: addr=%#llx size=%u\n",
-                 common.framebuffer_addr, common.size);
+    printk_debug("Framebuffer: addr=%#llx size=%u width=%u height=%u\n",
+                 common.framebuffer_addr, common.size, common.framebuffer_width,
+                 common.framebuffer_height);
 }
 
 void
@@ -53,13 +54,13 @@ multiboot_print_info(uint32_t multiboot_info) {
     }
 }
 
-multiboot_uint64_t
-multiboot_framebuffer_addr(uint32_t multiboot_info) {
+struct multiboot_tag_framebuffer_common *
+multiboot_framebuffer_info(uint32_t multiboot_info) {
     struct multiboot_tag *tag = (struct multiboot_tag *) (multiboot_info + 8);
     while (tag->type != MULTIBOOT_TAG_TYPE_END) {
         switch (tag->type) {
             case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
-                return ((struct multiboot_tag_framebuffer *) tag)->common.framebuffer_addr;
+                return &((struct multiboot_tag_framebuffer *) tag)->common;
             default:
                 break;
         }

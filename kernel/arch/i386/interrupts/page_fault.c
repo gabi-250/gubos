@@ -6,6 +6,8 @@
 #include <mm/pmm.h>
 #include <mm/paging.h>
 
+extern vmm_context_t VMM_CONTEXT;
+
 // Get the (linear) address that triggered the page fault.
 static uint32_t
 read_page_fault_addr() {
@@ -39,9 +41,12 @@ page_fault_handler(interrupt_state_t *state, uint32_t err_code) {
         }
     } else {
         // Page not present
-        // XXX: always allow writes for now
+        vmm_allocation_t *alloc = vmm_find_allocation(&VMM_CONTEXT, addr);
+
+        ASSERT(alloc, "invalid VMM state");
+
         uint32_t physical_addr = (uint32_t)pmm_alloc_page();
-        // alloc = vmm_find_allocation(addr);
         paging_map_virtual_to_physical(addr, physical_addr, PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);
+        printk_debug("mapped %#x -> %#x\n", addr, physical_addr);
     }
 }

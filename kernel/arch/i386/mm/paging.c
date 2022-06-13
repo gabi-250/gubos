@@ -5,6 +5,7 @@
 
 #include <printk.h>
 #include <panic.h>
+#include <kmalloc.h>
 
 #include <mm/paging.h>
 #include <mm/vmm.h>
@@ -16,22 +17,6 @@ extern kernel_meminfo_t KERNEL_MEMINFO;
 
 page_table_t KERNEL_PAGE_TABLES[PAGE_TABLE_SIZE];
 page_table_t ACTIVE_PAGE_DIRECTORY;
-
-static inline uint32_t
-virtual_to_physical(uint32_t addr) {
-    // Subtract (virtual_start - physical_start) to get the physical address.
-    uint32_t addr_space_delta = (KERNEL_MEMINFO.virtual_start -
-                                 KERNEL_MEMINFO.physical_start);
-    return addr - addr_space_delta;
-}
-
-static inline uint32_t
-physical_to_virtual(uint32_t addr) {
-    // Add (virtual_start - physical_start) to get the virtual address.
-    uint32_t addr_space_delta = (KERNEL_MEMINFO.virtual_start -
-                                 KERNEL_MEMINFO.physical_start);
-    return addr + addr_space_delta;
-}
 
 void
 init_paging() {
@@ -50,7 +35,12 @@ init_paging() {
                                        PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);
     }
 
-    uint32_t cr3 = virtual_to_physical((uint32_t)&ACTIVE_PAGE_DIRECTORY);
+    // Map the first heap page to ensure we don't page fault during vmm_init
+    // (vmm_init uses kmalloc, and vmm_init should _not_ page fault).
+    paging_map_virtual_to_physical(KERNEL_HEAP_START, (uint32_t)pmm_alloc_page(),
+                                   PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);
+
+    uint32_t cr3 = vmm_virtual_to_physical((uint32_t)&ACTIVE_PAGE_DIRECTORY);
     // The last 4MB of virtual address space is reserved for bookkeeping: we map
     // the last page directory entry to the page directory itself (rather than
     // some other physical address), which makes it easy to access and modify
@@ -80,7 +70,7 @@ paging_map_virtual_to_physical(uint32_t virtual_addr, uint32_t physical_addr,
     page_table_t *page_table = &KERNEL_PAGE_TABLES[PAGE_DIRECTORY_INDEX(virtual_addr)];
     // page_table_addr is 4096 bytes aligned, so no need to clear the
     // lower 12 bits where the flags go
-    uint32_t page_table_addr = virtual_to_physical((uint32_t)page_table);
+    uint32_t page_table_addr = vmm_virtual_to_physical((uint32_t)page_table);
     uint32_t page_start_addr = (physical_addr >> 12) << 12;
 
     ACTIVE_PAGE_DIRECTORY.entries[PAGE_DIRECTORY_INDEX(virtual_addr)] =

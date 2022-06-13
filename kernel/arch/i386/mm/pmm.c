@@ -45,9 +45,8 @@ pmm_init(multiboot_info_t multiboot_info) {
     // Mark the kernel physical address range as used:
     pmm_mark_range_used(KERNEL_MEMINFO.physical_start, KERNEL_MEMINFO.physical_end);
     // Mark the kernel heap address range as used:
-    uint32_t addr_space_delta = (KERNEL_MEMINFO.virtual_start - KERNEL_MEMINFO.physical_start);
-    uint32_t heap_start = KERNEL_HEAP_START - addr_space_delta;
-    uint32_t heap_end = KERNEL_HEAP_START + KERNEL_HEAP_SIZE - 1 - addr_space_delta;
+    uint32_t heap_start = vmm_virtual_to_physical(KERNEL_HEAP_START);
+    uint32_t heap_end = heap_start + KERNEL_HEAP_SIZE - 1;
     pmm_mark_range_used(heap_start, heap_end);
 
     // Mark any unavailable memory regions as used:
@@ -55,9 +54,9 @@ pmm_init(multiboot_info_t multiboot_info) {
     while (tag->type != MULTIBOOT_TAG_TYPE_END && tag->type != MULTIBOOT_TAG_TYPE_MMAP) {
         tag = (struct multiboot_tag *)((multiboot_uint8_t *) tag + ((tag->size + 7) & ~7));
     }
-    if (tag-> type == MULTIBOOT_TAG_TYPE_END) {
-        PANIC("failed to read memory map");
-    }
+
+    ASSERT(tag-> type != MULTIBOOT_TAG_TYPE_END, "failed to read memory map");
+
     multiboot_memory_map_t *mmap = ((struct multiboot_tag_mmap *) tag)->entries;
     while ((multiboot_uint8_t *) mmap < (multiboot_uint8_t *) tag + tag->size) {
         switch (mmap->type) {
@@ -73,6 +72,14 @@ pmm_init(multiboot_info_t multiboot_info) {
         mmap = (multiboot_memory_map_t *)((unsigned long) mmap + ((struct multiboot_tag_mmap *)
                                           tag)->entry_size);
     }
+
+    // The framebuffer address is also unavailable
+    struct multiboot_tag_framebuffer_common *framebuffer_info = multiboot_framebuffer_info(
+                multiboot_info.addr);
+    uint32_t framebuffer_size = framebuffer_info->framebuffer_width *
+                                framebuffer_info->framebuffer_height * 2;
+    pmm_mark_range_used(framebuffer_info->framebuffer_addr,
+                        framebuffer_info->framebuffer_addr + framebuffer_size - 1);
 }
 
 void *

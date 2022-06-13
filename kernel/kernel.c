@@ -13,6 +13,7 @@
 #include <sched.h>
 
 kernel_meminfo_t KERNEL_MEMINFO;
+multiboot_info_t MULTIBOOT_INFO;
 
 __attribute__ ((constructor)) void
 __init_kernel() {
@@ -26,7 +27,8 @@ __uninit_kernel() {
 void
 kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     KERNEL_MEMINFO = meminfo;
-    tty_init(multiboot_info, meminfo.higher_half_base);
+    MULTIBOOT_INFO = multiboot_info;
+    tty_init(meminfo.higher_half_base);
     ps2_init_devices();
     if (multiboot_info.magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
         printk_debug("Invalid multiboot2 magic number: %d\n", multiboot_info.magic);
@@ -38,12 +40,16 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     printk_debug("kernel virtual end %#x\n", meminfo.virtual_end);
     printk_debug("kernel physical start %#x\n", meminfo.physical_start);
     printk_debug("kernel physical end %#x\n", meminfo.physical_end);
-    init_paging(meminfo);
-    printk_debug("done\n");
 
+    printk_debug("Initializing memory manager\n");
     pmm_init(multiboot_info);
+    printk_debug("PMM: OK\n");
+    init_paging(meminfo);
+    printk_debug("paging: OK\n");
     kmalloc_init();
+    printk_debug("kmalloc: OK\n");
     vmm_init();
+    printk_debug("VMM: OK\n");
 
     uint32_t module_addr;
     if ((module_addr = multiboot_get_first_module(multiboot_info.addr)) == 0) {
@@ -51,10 +57,11 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
         return;
     }
     printk_debug("module is at %#x\n", module_addr);
+
     for (int i = 0; i < 500; ++i) {
         int *x = (int *)kmalloc(sizeof(int));
         *x = 4;
-        printk_debug("kmalloc'd x @ %#x. x is %d\n", (uint32_t)x, *x);
+        printk_debug("i=%d kmalloc'd x @ %#x. x is %d\n", i, (uint32_t)x, *x);
         long long *y = (long long *)kmalloc(sizeof(long long));
         *y = 4;
         printk_debug("kmalloc'd x @ %#x. y is %lld\n", y, *y);
@@ -62,7 +69,7 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
         /*kfree(y);*/
     }
 
-    init_sched(meminfo);
+    init_sched();
 
     // loop forever waiting for the next interrupt
     for(;;) {

@@ -8,37 +8,38 @@
 
 #include <multiboot2.h>
 
-#define VGA_HEIGHT 25
-#define VGA_WIDTH 80
+extern multiboot_info_t MULTIBOOT_INFO;
 
-// This are initialized by tty_init:
+// These are all initialized by tty_init:
 static size_t tty_row;
 static size_t tty_column;
 static uint8_t default_tty_color;
 static uint16_t *vga_memory;
+static uint32_t framebuf_height;
+static uint32_t framebuf_width;
 
 static void
 tty_adjust_row() {
-    if (++tty_row == VGA_HEIGHT) {
-        for (size_t y = 0; y < VGA_HEIGHT - 1; y++) {
-            for (size_t x = 0; x < VGA_WIDTH; x++) {
-                const size_t index_old = y * VGA_WIDTH + x;
-                const size_t index_new = (y + 1) * VGA_WIDTH + x;
+    if (++tty_row == framebuf_height) {
+        for (size_t y = 0; y < framebuf_height - 1; y++) {
+            for (size_t x = 0; x < framebuf_width; x++) {
+                const size_t index_old = y * framebuf_width + x;
+                const size_t index_new = (y + 1) * framebuf_width + x;
                 vga_memory[index_old] = vga_memory[index_new];
             }
         }
         // Clear the last line
-        for (size_t x = 0; x < VGA_WIDTH; x++) {
-            const size_t index = (VGA_HEIGHT - 1) * VGA_WIDTH + x;
+        for (size_t x = 0; x < framebuf_width; x++) {
+            const size_t index = (framebuf_height - 1) * framebuf_width + x;
             vga_memory[index] = vga_entry(' ', default_tty_color);
         }
-        tty_row = VGA_HEIGHT - 1;
+        tty_row = framebuf_height - 1;
     }
 }
 
 static void
 tty_adjust_indices() {
-    if (++tty_column == VGA_WIDTH) {
+    if (++tty_column == framebuf_width) {
         tty_column = 0;
         tty_adjust_row();
     }
@@ -46,23 +47,28 @@ tty_adjust_indices() {
 
 static void
 tty_putchar(char c, uint8_t tty_color) {
-    const size_t index = tty_row * VGA_WIDTH + tty_column;
+    const size_t index = tty_row * framebuf_width + tty_column;
     vga_memory[index] = vga_entry((unsigned char)c, tty_color);
     tty_adjust_indices();
 }
 
 void
-tty_init(multiboot_info_t multiboot_info, uint32_t higher_half_base) {
+tty_init(uint32_t higher_half_base) {
+    struct multiboot_tag_framebuffer_common *framebuffer_info =
+        multiboot_framebuffer_info(MULTIBOOT_INFO.addr);
+
+    framebuf_height = framebuffer_info->framebuffer_height;
+    framebuf_width = framebuffer_info->framebuffer_width;
+
     vga_memory =
-        (uint16_t *)((uint32_t)multiboot_framebuffer_addr(multiboot_info.addr) +
-                     higher_half_base);
+        (uint16_t *)((uint32_t)framebuffer_info->framebuffer_addr + higher_half_base);
     tty_row = 0;
     tty_column = 0;
     // grey text on a beautiful blue background
     default_tty_color = vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_LIGHT_BLUE);
-    for (size_t y = 0; y < VGA_HEIGHT; y++) {
-        for (size_t x = 0; x < VGA_WIDTH; x++) {
-            const size_t index = y * VGA_WIDTH + x;
+    for (size_t y = 0; y < framebuf_height; y++) {
+        for (size_t x = 0; x < framebuf_width; x++) {
+            const size_t index = y * framebuf_width + x;
             vga_memory[index] = vga_entry(' ', default_tty_color);
         }
     }
