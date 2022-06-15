@@ -10,7 +10,7 @@
     panic(__FILE__, __LINE__, fmt __VA_OPT__(,) __VA_ARGS__)
 
 #define ASSERT(expr, fmt, ...) \
-    if (!expr) panic(__FILE__, __LINE__, fmt __VA_OPT__(,) __VA_ARGS__)
+    if (!(expr)) panic(__FILE__, __LINE__, fmt __VA_OPT__(,) __VA_ARGS__)
 
 void __attribute__ ((noreturn)) panic(const char *, int, const char *, ...);
 
