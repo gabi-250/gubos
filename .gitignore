@@ -23,3 +23,6 @@ grub/modules
 
 # Executables
 *.out
+
+# astyle
+*.orig

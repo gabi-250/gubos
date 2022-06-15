@@ -61,7 +61,10 @@ void vmm_unmap_pages(vmm_context_t *, uint32_t virtual_addr, uint32_t page_count
 // Find the allocation that corresponds to the specified address.
 vmm_allocation_t *vmm_find_allocation(vmm_context_t *, uint32_t virtual_addr);
 
+// Map the specified virtual address to a physical address.
 uint32_t vmm_virtual_to_physical(uint32_t addr);
+
+// Map the specified physical address to a virtual address.
 uint32_t vmm_physical_to_virtual(uint32_t addr);
 
 #endif /* __VMM_H__ */

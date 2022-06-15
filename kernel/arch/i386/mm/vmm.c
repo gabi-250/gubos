@@ -24,8 +24,8 @@ static void remove_allocation(vmm_context_t *vmm_context,
                               vmm_allocation_tree_t *allocation);
 static void add_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
                             uint32_t page_count);
-static uint32_t remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
-                                   uint32_t page_count);
+static void remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
+                               uint32_t page_count);
 
 void
 vmm_init() {
@@ -72,10 +72,10 @@ vmm_map_pages(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t physic
         PANIC("Out of memory");
     }
 
-    uint32_t addr = remove_free_blocks(vmm_context, virtual_addr, page_count);
-    add_allocation(vmm_context, addr, physical_addr, page_count, flags);
+    remove_free_blocks(vmm_context, virtual_addr, page_count);
+    add_allocation(vmm_context, virtual_addr, physical_addr, page_count, flags);
 
-    return (void *)addr;
+    return (void *)virtual_addr;
 }
 
 void
@@ -96,7 +96,7 @@ vmm_unmap_pages(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t page
                 allocations->alloc->virtual_addr += PAGE_SIZE * page_count;
                 allocations->alloc->page_count -= page_count;
             } else if (page_count == allocations->alloc->virtual_addr) {
-                // Delete the node alogether
+                // Delete the node altogether
                 remove_allocation(vmm_context, allocations);
             } else {
                 PANIC("cannot unamp more than has been mapped");
@@ -214,10 +214,10 @@ add_allocation(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t physi
     };
 
     new_node->parent = prev;
-    if (virtual_addr > prev->alloc->virtual_addr) {
-        prev->right = new_node;
-    } else {
+    if (virtual_addr < prev->alloc->virtual_addr) {
         prev->left = new_node;
+    } else {
+        prev->right = new_node;
     }
 }
 
@@ -228,7 +228,17 @@ is_addr_in_range(uint32_t virtual_addr, vmm_free_blocks_t *free_blocks) {
     return virtual_addr >= free_blocks->virtual_addr && virtual_addr < range_end;
 }
 
-static uint32_t
+static void
+unlink_block(vmm_context_t *vmm_context, vmm_free_blocks_t *free_blocks, vmm_free_blocks_t *prev) {
+    if (prev) {
+        prev->next = free_blocks->next;
+    } else {
+        vmm_context->free_blocks = free_blocks->next;
+    }
+    kfree(free_blocks);
+}
+
+static void
 remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
                    uint32_t page_count) {
     ASSERT(vmm_context->free_blocks, "no free blocks");
@@ -238,39 +248,58 @@ remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
 
     while (free_blocks) {
         // If the caller requested a _specific_ virtual address, try to find it.
-        if (virtual_addr && free_blocks && !is_addr_in_range(virtual_addr, free_blocks)) {
-            free_blocks = free_blocks->next;
-
-            if (!free_blocks) {
-                PANIC("failed to allocate %#x", virtual_addr);
+        if (!virtual_addr || is_addr_in_range(virtual_addr, free_blocks)) {
+            if (free_blocks->page_count >= page_count) {
+                break;
             }
-
-            continue;
         }
-
-        if (free_blocks->page_count > page_count) {
-            uint32_t addr = free_blocks->virtual_addr;
-            free_blocks->page_count -= page_count;
-            free_blocks->virtual_addr += page_count * PAGE_SIZE;
-
-            return addr;
-        } else if (free_blocks->page_count == page_count) {
-            uint32_t addr = free_blocks->virtual_addr;
-            if (prev) {
-                prev->next = free_blocks->next;
-            } else {
-                vmm_context->free_blocks = free_blocks->next;
-                kfree(free_blocks);
-            }
-
-            return addr;
-        }
-
         prev = free_blocks;
         free_blocks = free_blocks->next;
     }
 
-    PANIC("could not find %u consecutive free pages starting at %#x", page_count, virtual_addr);
+    if (!free_blocks) {
+        PANIC("could not find %u consecutive free pages starting at %#x", page_count, virtual_addr);
+    }
+
+    // Maybe the requested allocation fits perfectly in `free_blocks`.
+    if (free_blocks->page_count == page_count) {
+        unlink_block(vmm_context, free_blocks, prev);
+    } else if (free_blocks->page_count > page_count) {
+        // The requested virtual address is `page_offset` pages into the free
+        // region.
+        uint32_t page_offset = (virtual_addr - free_blocks->virtual_addr) / PAGE_SIZE;
+
+        // Are there enough pages to satisfy the request?
+        if (page_count > free_blocks->page_count - page_offset) {
+            PANIC("out of memory");
+        } else {
+            if (virtual_addr == free_blocks->virtual_addr) {
+                // The allocation is at the very beginning of the free region.
+                free_blocks->virtual_addr += page_count * PAGE_SIZE;
+                free_blocks->page_count -= page_count;
+            } else {
+                uint32_t new_block_page_offset = page_offset + page_count;
+
+                // Is the requested virtual address somewhere in the middle of the
+                // free region rather than at its beginning/end?
+                if (new_block_page_offset < free_blocks->page_count) {
+                    vmm_free_blocks_t *new_block = (vmm_free_blocks_t *)kmalloc(sizeof(vmm_free_blocks_t));
+                    *new_block = (vmm_free_blocks_t) {
+                        // The remaining free region immediately follows the
+                        // one starting at `virtual_addr`.
+                        .virtual_addr = free_blocks->virtual_addr + new_block_page_offset * PAGE_SIZE,
+                        .page_count = free_blocks->page_count - new_block_page_offset,
+                        .next = free_blocks->next,
+                    };
+                    free_blocks->next = new_block;
+                    free_blocks->page_count = page_offset;
+                } else {
+                    // ..no, it's at the end of the region:
+                    free_blocks->page_count -= page_count;
+                }
+            }
+        }
+    }
 }
 
 static void

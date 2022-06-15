@@ -58,7 +58,7 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     }
     printk_debug("module is at %#x\n", module_addr);
 
-    for (int i = 0; i < 500; ++i) {
+    for (int i = 0; i < 1000; ++i) {
         int *x = (int *)kmalloc(sizeof(int));
         *x = 4;
         printk_debug("i=%d kmalloc'd x @ %#x. x is %d\n", i, (uint32_t)x, *x);
