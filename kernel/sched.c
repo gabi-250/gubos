@@ -1,35 +1,50 @@
 #include <task.h>
 #include <sched.h>
 #include <kmalloc.h>
+#include <printk.h>
 #include <mm/vmm.h>
 #include <mm/meminfo.h>
+
 #include <stddef.h>
 
+extern kernel_meminfo_t KERNEL_MEMINFO;
 extern page_table_t ACTIVE_PAGE_DIRECTORY;
+extern vmm_context_t VMM_CONTEXT;
 
-typedef struct task_list {
-    task_control_block_t *task;
-    task_control_block_t *next;
-} task_list_t;
-
-static task_list_t tasks;
+task_list_t SCHED_TASKS;
 
 task_control_block_t *current_task;
 
-extern kernel_meminfo_t KERNEL_MEMINFO;
+static void
+test_task() {
+    printk_debug("task #2 here\n");
+    // Switch back to the first task
+    sched_switch_task(SCHED_TASKS.next);
+}
+
+static void
+first_task() {
+    printk_debug("first_task\n");
+
+    task_control_block_t *new_task = task_create((uint32_t)&ACTIVE_PAGE_DIRECTORY, &VMM_CONTEXT,
+                                     test_task);
+    sched_switch_task(new_task);
+
+    for(;;) {
+        asm volatile("hlt");
+    }
+}
 
 void
 init_sched() {
+    current_task = task_create((uint32_t)&ACTIVE_PAGE_DIRECTORY, &VMM_CONTEXT, NULL);
+    task_control_block_t *init_task = task_create((uint32_t)&ACTIVE_PAGE_DIRECTORY, &VMM_CONTEXT,
+                                      first_task);
     // Create the first kernel task
-    current_task = (task_control_block_t *)kmalloc(sizeof(task_control_block_t));
-    current_task->pid = 0;
-    current_task->kernel_stack_top = KERNEL_MEMINFO.stack_top; // XXX
-    current_task->virtual_addr_space = (uint32_t)&ACTIVE_PAGE_DIRECTORY;
-    current_task->esp0 = KERNEL_MEMINFO.stack_top; // XXX
-    current_task->vmm_context = NULL; // XXX
-
-    tasks = (task_list_t) {
+    SCHED_TASKS = (task_list_t) {
         .task = current_task,
-        .next = NULL,
+        .next = init_task,
     };
+    // Start executing it
+    sched_switch_task(SCHED_TASKS.next);
 }

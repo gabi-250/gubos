@@ -4,10 +4,10 @@
 
 # void sched_switch_task(task_control_block_t *next);
 sched_switch_task:
+    # eax = next
+    mov 4(%esp), %eax
     push %ebp
     mov %esp, %ebp
-    # eax = next
-    mov 8(%esp), %eax
     # Push the callee-saved registers
     push %ebx
     push %esi
@@ -15,6 +15,8 @@ sched_switch_task:
     # Save the ESP of the previous task (current_task->kernel_stack_top = ESP)
     mov current_task, %ebx
     mov %esp, 4(%ebx)
+    # current_task = next
+    mov %eax, (current_task)
     # Load the next task
     # ESP = next->kernel_stack_top
     mov 4(%eax), %esp

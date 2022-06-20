@@ -11,9 +11,14 @@
 #include <mm/paging.h>
 #include <kmalloc.h>
 #include <sched.h>
+#include <panic.h>
 
 kernel_meminfo_t KERNEL_MEMINFO;
 multiboot_info_t MULTIBOOT_INFO;
+
+extern task_list_t SCHED_TASKS;
+extern page_table_t ACTIVE_PAGE_DIRECTORY;
+extern vmm_context_t VMM_CONTEXT;
 
 __attribute__ ((constructor)) void
 __init_kernel() {
@@ -65,14 +70,11 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
         long long *y = (long long *)kmalloc(sizeof(long long));
         *y = 4;
         printk_debug("kmalloc'd x @ %#x. y is %lld\n", y, *y);
-        /*kfree(x);*/
-        /*kfree(y);*/
+        kfree(x);
+        kfree(y);
     }
 
     init_sched();
 
-    // loop forever waiting for the next interrupt
-    for(;;) {
-        asm volatile("hlt");
-    }
+    PANIC("kernel task returned");
 }
