@@ -5,7 +5,8 @@
 #include <mm/vmm.h>
 #include <mm/vmm.h>
 
-#define KERNEL_STACK_SIZE (1<<20)
+
+#define KERNEL_STACK_SIZE (KERNEL_PAGE_SIZE_4KB * 4)
 
 typedef struct task_control_block {
     uint32_t pid;

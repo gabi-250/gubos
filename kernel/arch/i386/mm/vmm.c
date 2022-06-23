@@ -5,7 +5,6 @@
 #include <mm/vmm.h>
 #include <mm/pmm.h>
 #include <mm/paging.h>
-#include <printk.h>
 #include <panic.h>
 #include <kmalloc.h>
 #include <mm/meminfo.h>
@@ -249,6 +248,7 @@ remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
     while (free_blocks) {
         // If the caller requested a _specific_ virtual address, try to find it.
         if (!virtual_addr || is_addr_in_range(virtual_addr, free_blocks)) {
+
             if (free_blocks->page_count >= page_count) {
                 break;
             }

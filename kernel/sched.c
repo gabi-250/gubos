@@ -17,21 +17,20 @@ task_control_block_t *current_task;
 
 static void
 test_task() {
-    printk_debug("task #2 here\n");
     // Switch back to the first task
-    sched_switch_task(SCHED_TASKS.next);
+    for (;;) {
+        printk_debug("task #2 here\n");
+        sched_switch_task(SCHED_TASKS.next);
+    }
 }
 
 static void
 first_task() {
-    printk_debug("first_task\n");
-
     task_control_block_t *new_task = task_create((uint32_t)&ACTIVE_PAGE_DIRECTORY, &VMM_CONTEXT,
                                      test_task);
-    sched_switch_task(new_task);
-
-    for(;;) {
-        asm volatile("hlt");
+    for (;;) {
+        printk_debug("first task\n");
+        sched_switch_task(new_task);
     }
 }
 
@@ -46,5 +45,6 @@ init_sched() {
         .next = init_task,
     };
     // Start executing it
+    sched_switch_task(SCHED_TASKS.task);
     sched_switch_task(SCHED_TASKS.next);
 }
