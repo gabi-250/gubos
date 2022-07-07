@@ -23,8 +23,8 @@ static void remove_allocation(vmm_context_t *vmm_context,
                               vmm_allocation_tree_t *allocation);
 static void add_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
                             uint32_t page_count);
-static void remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
-                               uint32_t page_count);
+static uint32_t remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
+                                   uint32_t page_count);
 
 void
 vmm_init() {
@@ -71,10 +71,10 @@ vmm_map_pages(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t physic
         PANIC("Out of memory");
     }
 
-    remove_free_blocks(vmm_context, virtual_addr, page_count);
-    add_allocation(vmm_context, virtual_addr, physical_addr, page_count, flags);
+    uint32_t addr = remove_free_blocks(vmm_context, virtual_addr, page_count);
+    add_allocation(vmm_context, addr, physical_addr, page_count, flags);
 
-    return (void *)virtual_addr;
+    return (void *)addr;
 }
 
 void
@@ -237,7 +237,7 @@ unlink_block(vmm_context_t *vmm_context, vmm_free_blocks_t *free_blocks, vmm_fre
     kfree(free_blocks);
 }
 
-static void
+static uint32_t
 remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
                    uint32_t page_count) {
     ASSERT(vmm_context->free_blocks, "no free blocks");
@@ -273,10 +273,13 @@ remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
         if (page_count > free_blocks->page_count - page_offset) {
             PANIC("out of memory");
         } else {
-            if (virtual_addr == free_blocks->virtual_addr) {
+            if (!virtual_addr || virtual_addr == free_blocks->virtual_addr) {
+                uint32_t allocated_addr = free_blocks->virtual_addr;
                 // The allocation is at the very beginning of the free region.
                 free_blocks->virtual_addr += page_count * PAGE_SIZE;
                 free_blocks->page_count -= page_count;
+
+                return allocated_addr;
             } else {
                 uint32_t new_block_page_offset = page_offset + page_count;
 
@@ -300,6 +303,8 @@ remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
             }
         }
     }
+
+    return virtual_addr;
 }
 
 static void

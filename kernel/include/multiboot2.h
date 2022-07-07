@@ -389,6 +389,6 @@ typedef struct multiboot_info multiboot_info_t;
 void multiboot_print_info(uint32_t);
 void multiboot_print_memory_map(struct multiboot_tag *, multiboot_memory_map_t *);
 struct multiboot_tag_framebuffer_common *multiboot_framebuffer_info(uint32_t);
-uint32_t multiboot_get_first_module(uint32_t);
+struct multiboot_tag_module *multiboot_get_first_module(uint32_t);
 
 #endif /*  ! MULTIBOOT_HEADER */

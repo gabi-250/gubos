@@ -10,5 +10,6 @@ typedef struct task_list {
 
 void init_sched();
 void sched_switch_task(task_control_block_t *);
+void switch_to_user_mode(uint32_t);
 
 #endif /* __SCHED_H__ */

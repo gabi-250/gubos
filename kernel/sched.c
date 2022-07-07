@@ -1,5 +1,7 @@
 #include <task.h>
 #include <sched.h>
+#include <gdt.h>
+#include <flags.h>
 #include <kmalloc.h>
 #include <printk.h>
 #include <mm/vmm.h>
@@ -14,6 +16,8 @@ extern vmm_context_t VMM_CONTEXT;
 task_list_t SCHED_TASKS;
 
 task_control_block_t *current_task;
+
+void goto_user_mode(uint32_t);
 
 static void
 test_task() {
@@ -46,5 +50,10 @@ init_sched() {
     };
     // Start executing it
     sched_switch_task(SCHED_TASKS.task);
-    sched_switch_task(SCHED_TASKS.next);
+    /*sched_switch_task(SCHED_TASKS.next);*/
+}
+
+void
+switch_to_user_mode(uint32_t user_addr) {
+    goto_user_mode(user_addr);
 }

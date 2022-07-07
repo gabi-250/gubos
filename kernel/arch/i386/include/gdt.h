@@ -1,9 +1,6 @@
 #ifndef __GDT_H__
 #define __GDT_H__
 
-#include <stdint.h>
-#include <stdbool.h>
-
 // These must be kept in sync with the gdt_init logic
 #define GDT_KERNEL_CODE_SEGMENT         0x8
 #define GDT_KERNEL_DATA_SEGMENT         0x10
@@ -35,7 +32,20 @@
 // An execute-only (accessed) code segment type.
 #define GDT_CODE_EXECUTE_ONLY_ACCESSED 0b1001
 // A read/write data segment type.
-#define GDT_DATA_READ_WRITE_SEG_TYPE 0b0010
+#define GDT_DATA_READ_WRITE_SEG_TYPE   0b0010
+
+
+// ======================================================================
+// Requested privilege levels
+// See Section 5.5 ("Privilege Levels") of the
+// Intel® 64 and IA-32 Architectures Software Developer's Manual, Volume 3.
+// ======================================================================
+#define GDT_KERNEL_RPL 0
+#define GDT_USER_RPL   3
+
+#ifndef __ASSEMBLY__
+#include <stdint.h>
+#include <stdbool.h>
 
 typedef struct segment_descriptor {
     // Bits 0-15 of the segment limit.
@@ -123,5 +133,6 @@ typedef struct task_state_segment {
     uint16_t io_map_base_address;
     uint32_t ssp;
 } __attribute__((packed)) task_state_segment_t;
+#endif
 
 #endif /* __GDT_H__ */

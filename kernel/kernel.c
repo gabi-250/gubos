@@ -44,7 +44,7 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     printk_debug("kernel virtual start %#x\n", meminfo.virtual_start);
     printk_debug("kernel virtual end %#x\n", meminfo.virtual_end);
     printk_debug("kernel physical start %#x\n", meminfo.physical_start);
-    printk_debug("kernel physical end %#x\n", meminfo.physical_end);
+    printk_debug("kernel stack top %#x\n", meminfo.stack_top);
 
     printk_debug("Initializing memory manager\n");
     pmm_init(multiboot_info);
@@ -56,11 +56,13 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     vmm_init();
     printk_debug("VMM: OK\n");
 
-    uint32_t module_addr;
-    if ((module_addr = multiboot_get_first_module(multiboot_info.addr)) == 0) {
+    struct multiboot_tag_module *module;
+    if ((module = multiboot_get_first_module(multiboot_info.addr)) == 0) {
         printk_debug("Missing module\n");
         return;
     }
+
+    uint32_t module_addr = module->mod_start;
     printk_debug("module is at %#x\n", module_addr);
 
     for (int i = 0; i < 1000; ++i) {
@@ -75,6 +77,15 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     }
 
     init_sched();
+
+
+    vmm_map_pages(&VMM_CONTEXT,
+                  USER_STACK_TOP - USER_STACK_SIZE, 0, USER_STACK_PAGE_COUNT,
+                  PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE | PAGE_FLAG_USER);
+
+    void *virtual_addr = vmm_map_pages(&VMM_CONTEXT, 0, module_addr, 1,
+                                       PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE | PAGE_FLAG_USER);
+    switch_to_user_mode((uint32_t)virtual_addr);
 
     PANIC("kernel task returned");
 }

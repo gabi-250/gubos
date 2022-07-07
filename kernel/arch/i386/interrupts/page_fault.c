@@ -31,11 +31,10 @@ page_fault_handler(interrupt_state_t *state, uint32_t err_code) {
                  err_code & PAGING_ERR_CODE_P ? "protection_fault": "non_present_page",
                  err_code & PAGING_ERR_CODE_WR ? "write": "read",
                  err_code & PAGING_ERR_CODE_US ? "user": "kernel");
-
     if (err_code & PAGING_ERR_CODE_P) {
         // A protection fault is always an error
         if (err_code & PAGING_ERR_CODE_US) {
-            printk_debug("TODO: kill the misbehaving user process");
+            PANIC("TODO: kill the misbehaving user process");
         } else {
             PANIC("kernel protection fault");
         }
@@ -45,8 +44,15 @@ page_fault_handler(interrupt_state_t *state, uint32_t err_code) {
 
         ASSERT(alloc, "invalid VMM state");
 
-        uint32_t physical_addr = (uint32_t)pmm_alloc_page();
-        paging_map_virtual_to_physical(addr, physical_addr, PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);
+        uint32_t physical_addr = alloc->physical_addr ? alloc->physical_addr : (uint32_t)pmm_alloc_page();
+
+        uint32_t flags = PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE;
+        if (err_code & PAGING_ERR_CODE_US) {
+            flags |= PAGE_FLAG_USER;
+
+        }
+
+        paging_map_virtual_to_physical(addr, physical_addr, flags);
         printk_debug("mapped %#x -> %#x\n", addr, physical_addr);
     }
 }

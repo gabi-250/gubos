@@ -1,12 +1,17 @@
 #ifndef __TASK_H__
 #define __TASK_H__
 
+#define KERNEL_STACK_PAGE_COUNT 10
+#define KERNEL_STACK_SIZE KERNEL_STACK_PAGE_COUNT * KERNEL_PAGE_SIZE_4KB
+
+#define USER_STACK_TOP 0x100000
+#define USER_STACK_PAGE_COUNT 10
+#define USER_STACK_SIZE USER_STACK_PAGE_COUNT * KERNEL_PAGE_SIZE_4KB
+
+#ifndef __ASSEMBLY__
 #include <stdint.h>
 #include <mm/vmm.h>
 #include <mm/vmm.h>
-
-
-#define KERNEL_STACK_SIZE (KERNEL_PAGE_SIZE_4KB * 4)
 
 typedef struct task_control_block {
     uint32_t pid;
@@ -18,5 +23,6 @@ typedef struct task_control_block {
 
 task_control_block_t *task_create(uint32_t, vmm_context_t *, void (*)());
 void task_init(task_control_block_t *);
+#endif
 
 #endif /* __TASK_H__ */

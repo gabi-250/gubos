@@ -5,7 +5,7 @@ set -eou pipefail
 # Build all the example programs and get GRUB to load them into memory
 mkdir -p grub/modules
 (cd programs && make)
-cp programs/*.o grub/modules
+cp programs/* grub/modules
 
 mkdir -p build/boot/grub
 

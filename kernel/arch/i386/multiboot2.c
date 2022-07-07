@@ -5,7 +5,7 @@
 void
 multiboot_print_memory_map(struct multiboot_tag *tag, multiboot_memory_map_t *mmap) {
     printk_debug("Memory map:\n");
-    while ((multiboot_uint8_t *) mmap < (multiboot_uint8_t *) tag + tag->size) {
+    while ((multiboot_uint8_t *)mmap < (multiboot_uint8_t *)tag + tag->size) {
         printk_debug("    address: %#llx | length: %llu | type: ", mmap->addr, mmap->len);
         switch (mmap->type) {
             case MULTIBOOT_MEMORY_AVAILABLE:
@@ -25,8 +25,8 @@ multiboot_print_memory_map(struct multiboot_tag *tag, multiboot_memory_map_t *mm
                 break;
         }
 
-        multiboot_uint32_t entry_size = ((struct multiboot_tag_mmap *) tag)->entry_size;
-        mmap = (multiboot_memory_map_t *)((unsigned long) mmap + entry_size);
+        multiboot_uint32_t entry_size = ((struct multiboot_tag_mmap *)tag)->entry_size;
+        mmap = (multiboot_memory_map_t *)((unsigned long)mmap + entry_size);
     }
 }
 
@@ -39,44 +39,44 @@ multiboot_print_framebuffer_info(struct multiboot_tag_framebuffer_common common)
 
 void
 multiboot_print_info(uint32_t multiboot_info) {
-    struct multiboot_tag *tag = (struct multiboot_tag *) (multiboot_info + 8);
+    struct multiboot_tag *tag = (struct multiboot_tag *)(multiboot_info + 8);
     while (tag->type != MULTIBOOT_TAG_TYPE_END) {
         switch (tag->type) {
             case MULTIBOOT_TAG_TYPE_MMAP:
-                multiboot_print_memory_map(tag, ((struct multiboot_tag_mmap *) tag)->entries);
+                multiboot_print_memory_map(tag, ((struct multiboot_tag_mmap *)tag)->entries);
                 break;
             case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
-                multiboot_print_framebuffer_info(((struct multiboot_tag_framebuffer *) tag)->common);
+                multiboot_print_framebuffer_info(((struct multiboot_tag_framebuffer *)tag)->common);
             default:
                 break;
         }
-        tag = (struct multiboot_tag *)((multiboot_uint8_t *) tag + ((tag->size + 7) & ~7));
+        tag = (struct multiboot_tag *)((multiboot_uint8_t *)tag + ((tag->size + 7) & ~7));
     }
 }
 
 struct multiboot_tag_framebuffer_common *
 multiboot_framebuffer_info(uint32_t multiboot_info) {
-    struct multiboot_tag *tag = (struct multiboot_tag *) (multiboot_info + 8);
+    struct multiboot_tag *tag = (struct multiboot_tag *)(multiboot_info + 8);
     while (tag->type != MULTIBOOT_TAG_TYPE_END) {
         switch (tag->type) {
             case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
-                return &((struct multiboot_tag_framebuffer *) tag)->common;
+                return &((struct multiboot_tag_framebuffer *)tag)->common;
             default:
                 break;
         }
-        tag = (struct multiboot_tag *)((multiboot_uint8_t *) tag + ((tag->size + 7) & ~7));
+        tag = (struct multiboot_tag *)((multiboot_uint8_t *)tag + ((tag->size + 7) & ~7));
     }
     return 0;
 }
 
-uint32_t
+struct multiboot_tag_module *
 multiboot_get_first_module(uint32_t multiboot_info) {
-    struct multiboot_tag *tag = (struct multiboot_tag *) (multiboot_info + 8);
+    struct multiboot_tag *tag = (struct multiboot_tag *)(multiboot_info + 8);
     while (tag->type != MULTIBOOT_TAG_TYPE_END) {
         if (tag->type == MULTIBOOT_TAG_TYPE_MODULE) {
-            return ((struct multiboot_tag_module *) tag)->mod_start;
+            return (struct multiboot_tag_module *)tag;
         }
-        tag = (struct multiboot_tag *)((multiboot_uint8_t *) tag + ((tag->size + 7) & ~7));
+        tag = (struct multiboot_tag *)((multiboot_uint8_t *)tag + ((tag->size + 7) & ~7));
     }
     return 0;
 }
