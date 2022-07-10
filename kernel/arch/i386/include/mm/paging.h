@@ -1,8 +1,6 @@
 #ifndef __PAGING_H__
 #define __PAGING_H__
 
-#include <stdbool.h>
-
 // ======================================================================
 // Paging constants
 // ======================================================================
@@ -40,6 +38,11 @@
 #define PAGE_DIRECTORY_INDEX(vaddr)   ((vaddr) >> PAGE_DIRECTORY_START)
 #define PAGE_TABLE_INDEX(vaddr)       (((vaddr) >> PAGE_TABLE_START) & ((1 << 10) - 1))
 
+#ifndef __ASSEMBLY__
+#include <stdbool.h>
+#include <stdint.h>
+
+
 typedef struct page_table {
     uint32_t entries[PAGE_TABLE_SIZE];
 } __attribute__ ((aligned(4096))) page_table_t;
@@ -65,5 +68,6 @@ bool paging_is_aligned(uint32_t);
 // Invalidate the TLB entries of the page that corresponds to the specified
 // address.
 void invlpg(uint32_t addr);
+#endif
 
 #endif /* __PAGING_H__ */

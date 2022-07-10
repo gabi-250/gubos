@@ -2,6 +2,7 @@
 #include "flags.h"
 #include "gdt.h"
 #include "task.h"
+#include "mm/addr_space.h"
 
 .globl do_task_switch
 .globl current_task

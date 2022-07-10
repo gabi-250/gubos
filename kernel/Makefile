@@ -29,6 +29,7 @@ $(ARCHDIR)/multiboot2.o\
 $(ARCHDIR)/mm/pmm.o\
 $(ARCHDIR)/mm/vmm.o\
 $(ARCHDIR)/mm/paging.o\
+$(ARCHDIR)/mm/addr_space.o\
 $(ARCHDIR)/paging_bootstrap.o\
 $(ARCHDIR)/schedS.o\
 
