@@ -7,9 +7,12 @@
 #include <pic.h>
 #include <portio.h>
 #include <ps2.h>
+#include <sched.h>
 
 // The number of entries in the interrupt descriptor table
 #define IDT_GATE_DESCRIPTOR_COUNT 256
+
+extern int SCHED_INIT;
 
 // The IDT can contain 3 kinds of gate descriptors:
 // * task-gate: the same as the task gates used in the GDT/LDT
@@ -52,6 +55,9 @@ default_exception_handler(interrupt_state_t *state) {
 __attribute__ ((interrupt)) void
 timer_irq_handler(interrupt_state_t *) {
     pic_send_eoi(PIC_IRQ0);
+    if (SCHED_INIT) {
+        sched_context_switch();
+    }
 }
 
 __attribute__ ((interrupt)) void

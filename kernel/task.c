@@ -9,7 +9,7 @@
 extern vmm_context_t VMM_CONTEXT;
 
 task_control_block_t *
-task_create(uint32_t cr3, vmm_context_t *vmm_ctx, void (*task_fn)()) {
+task_create(uint32_t cr3, vmm_context_t *vmm_ctx, void (*task_fn)(void)) {
     static uint32_t last_pid = 0;
 
     uint32_t kernel_stack_bottom = (uint32_t)vmm_map_pages(&VMM_CONTEXT, 0, 0, KERNEL_STACK_PAGE_COUNT,

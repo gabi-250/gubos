@@ -3,13 +3,13 @@
 #include "gdt.h"
 #include "task.h"
 
-.globl sched_switch_task
+.globl do_task_switch
 .globl current_task
 .globl tss
 .globl goto_user_mode
 
-# void sched_switch_task(task_control_block_t *next);
-sched_switch_task:
+# void do_task_switch(task_control_block_t *next);
+do_task_switch:
     # eax = next
     mov 4(%esp), %eax
     push %ebp

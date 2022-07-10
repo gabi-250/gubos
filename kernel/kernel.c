@@ -16,7 +16,6 @@
 kernel_meminfo_t KERNEL_MEMINFO;
 multiboot_info_t MULTIBOOT_INFO;
 
-extern task_list_t SCHED_TASKS;
 extern page_table_t ACTIVE_PAGE_DIRECTORY;
 extern vmm_context_t VMM_CONTEXT;
 
@@ -27,6 +26,31 @@ __init_kernel() {
 __attribute__ ((destructor)) void
 __uninit_kernel() {
     printk_debug("Fatal error: kernel returned.\n");
+}
+
+static void
+test_task1() {
+    for (;;) {
+        printk_debug("task #1 here\n");
+        asm volatile("hlt");
+    }
+}
+
+
+static void
+test_task2() {
+    for (;;) {
+        printk_debug("task #2 here\n");
+        asm volatile("hlt");
+    }
+}
+
+static void
+test_task3() {
+    for (;;) {
+        printk_debug("task #3 here\n");
+        asm volatile("hlt");
+    }
 }
 
 void
@@ -78,14 +102,30 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
 
     init_sched();
 
+    task_control_block_t *task1 = task_create((uint32_t)&ACTIVE_PAGE_DIRECTORY, &VMM_CONTEXT,
+                                  test_task1);
 
-    vmm_map_pages(&VMM_CONTEXT,
-                  USER_STACK_TOP - USER_STACK_SIZE, 0, USER_STACK_PAGE_COUNT,
-                  PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE | PAGE_FLAG_USER);
+    task_control_block_t *task2 = task_create((uint32_t)&ACTIVE_PAGE_DIRECTORY, &VMM_CONTEXT,
+                                  test_task2);
 
-    void *virtual_addr = vmm_map_pages(&VMM_CONTEXT, 0, module_addr, 1,
-                                       PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE | PAGE_FLAG_USER);
-    switch_to_user_mode((uint32_t)virtual_addr);
+    task_control_block_t *task3 = task_create((uint32_t)&ACTIVE_PAGE_DIRECTORY, &VMM_CONTEXT,
+                                  test_task3);
 
+    sched_add(task1, SCHED_PRIORITY_LOW);
+    sched_add(task2, SCHED_PRIORITY_LOW);
+    sched_add(task3, SCHED_PRIORITY_LOW);
+
+    /*vmm_map_pages(&VMM_CONTEXT,*/
+    /*USER_STACK_TOP - USER_STACK_SIZE, 0, USER_STACK_PAGE_COUNT,*/
+    /*PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE | PAGE_FLAG_USER);*/
+
+    /*void *virtual_addr = vmm_map_pages(&VMM_CONTEXT, 0, module_addr, 1,*/
+    /*PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE | PAGE_FLAG_USER);*/
+    /*switch_to_user_mode((uint32_t)virtual_addr);*/
+
+
+    for (;;) {
+        asm volatile("hlt");
+    }
     PANIC("kernel task returned");
 }
