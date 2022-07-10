@@ -6,10 +6,8 @@
 // ======================================================================
 // Paging constants
 // ======================================================================
-// 4 MB pages
-#define KERNEL_PAGE_SIZE_4MB (1 << 22)
 // 4 KB pages
-#define KERNEL_PAGE_SIZE_4KB (1 << 12)
+#define PAGE_SIZE            (1 << 12)
 #define PAGE_TABLE_SIZE      1024
 #define PAGE_DIRECTORY_START 22
 #define PAGE_TABLE_START     12

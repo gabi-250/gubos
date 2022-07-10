@@ -1,8 +1,6 @@
 #include <stdint.h>
 #include <kmalloc.h>
 
-#define KERNEL_PAGE_SIZE KERNEL_PAGE_SIZE_4KB
-
 kmalloc_header_t *KMALLOC_HEAD;
 
 void

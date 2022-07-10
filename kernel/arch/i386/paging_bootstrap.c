@@ -6,12 +6,13 @@
 #include <mm/vmm.h>
 #include <mm/meminfo.h>
 
-#define KERNEL_PAGE_SIZE KERNEL_PAGE_SIZE_4MB
+// 4 MB pages
+#define KERNEL_PAGE_SIZE (1 << 22)
 
 // The page directory of the kernel.
 //
-// NOTE: The kernel uses 4MB pages, so we only really need to use 256 out of the
-// 1024 available entries (256 * 4MB = 1GB)
+// NOTE: The kernel initially uses 4 MB pages, so we only really need to use 256
+// out of the 1024 available entries (256 * 4MB = 1GB)
 static page_table_t __attribute__((section(".data.paging_bootstrap")))
 KERNEL_PAGE_DIRECTORY;
 

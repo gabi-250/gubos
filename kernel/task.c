@@ -2,6 +2,7 @@
 
 #include <mm/vmm.h>
 #include <mm/pmm.h>
+#include <mm/paging.h>
 #include <task.h>
 #include <kmalloc.h>
 
@@ -18,7 +19,7 @@ task_create(uint32_t cr3, vmm_context_t *vmm_ctx, void (*task_fn)()) {
     // If the stack is not mapped, you're going to have a bad time.
     for (size_t i = 0; i < KERNEL_STACK_PAGE_COUNT; ++i) {
         uint32_t physical_addr = (uint32_t)pmm_alloc_page();
-        paging_map_virtual_to_physical(kernel_stack_bottom + i * KERNEL_PAGE_SIZE_4KB, physical_addr,
+        paging_map_virtual_to_physical(kernel_stack_bottom + i * PAGE_SIZE, physical_addr,
                                        PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);
     }
 

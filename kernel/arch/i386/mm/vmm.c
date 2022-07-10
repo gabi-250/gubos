@@ -2,14 +2,12 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <panic.h>
+#include <kmalloc.h>
 #include <mm/vmm.h>
 #include <mm/pmm.h>
 #include <mm/paging.h>
-#include <panic.h>
-#include <kmalloc.h>
 #include <mm/meminfo.h>
-
-#define PAGE_SIZE KERNEL_PAGE_SIZE_4KB
 
 extern kernel_meminfo_t KERNEL_MEMINFO;
 extern multiboot_info_t MULTIBOOT_INFO;
@@ -38,11 +36,11 @@ vmm_init() {
     // vmm_map_pages
     VMM_CONTEXT.free_blocks = NULL;
 
-    uint64_t total_page_count = ((uint64_t)1 << 32) / KERNEL_PAGE_SIZE_4KB;
+    uint64_t total_page_count = ((uint64_t)1 << 32) / PAGE_SIZE;
     // Initially let's say the entire address space is available
     add_free_blocks(&VMM_CONTEXT, 0, total_page_count);
 
-    vmm_map_pages(&VMM_CONTEXT, KERNEL_HEAP_START, 0, KERNEL_HEAP_SIZE / KERNEL_PAGE_SIZE_4KB,
+    vmm_map_pages(&VMM_CONTEXT, KERNEL_HEAP_START, 0, KERNEL_HEAP_SIZE / PAGE_SIZE,
                   PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);
 
     // Map the framebuffer
@@ -54,7 +52,7 @@ vmm_init() {
 
     // Map the kernel
     uint32_t page_count = (KERNEL_MEMINFO.virtual_end - KERNEL_MEMINFO.virtual_start) /
-                          KERNEL_PAGE_SIZE_4KB;
+                          PAGE_SIZE;
     vmm_map_pages(&VMM_CONTEXT, KERNEL_MEMINFO.virtual_start,
                   KERNEL_MEMINFO.physical_start, page_count,
                   PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);

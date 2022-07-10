@@ -11,8 +11,6 @@
 #include <mm/vmm.h>
 #include <mm/pmm.h>
 
-#define PAGE_SIZE KERNEL_PAGE_SIZE_4KB
-
 extern kernel_meminfo_t KERNEL_MEMINFO;
 
 page_table_t KERNEL_PAGE_TABLES[PAGE_TABLE_SIZE];
@@ -27,9 +25,9 @@ init_paging() {
 
     uint32_t higher_half_base = KERNEL_MEMINFO.higher_half_base;
     uint32_t virtual_end = KERNEL_MEMINFO.virtual_end;
-    for (uint64_t i = 0; higher_half_base + i * KERNEL_PAGE_SIZE_4KB < virtual_end; ++i) {
-        uint32_t virtual_addr = higher_half_base + i * KERNEL_PAGE_SIZE_4KB;
-        uint32_t physical_addr = i * KERNEL_PAGE_SIZE_4KB;
+    for (uint64_t i = 0; higher_half_base + i * PAGE_SIZE < virtual_end; ++i) {
+        uint32_t virtual_addr = higher_half_base + i * PAGE_SIZE;
+        uint32_t physical_addr = i * PAGE_SIZE;
 
         paging_map_virtual_to_physical(virtual_addr, physical_addr,
                                        PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);

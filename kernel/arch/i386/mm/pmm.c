@@ -13,7 +13,6 @@
 // NOTE: each bit represents one 4KB page.
 #define MEM_BITMAP_SIZE (1 << 7)
 #define BITMAP_ENTRY_MASK UINT8_MAX
-#define KERNEL_PAGE_SIZE KERNEL_PAGE_SIZE_4KB
 
 extern kernel_meminfo_t KERNEL_MEMINFO;
 
@@ -21,21 +20,21 @@ static uint8_t MEM_BITMAP[MEM_BITMAP_SIZE];
 
 static void
 pmm_mark_addr_used(uint32_t addr) {
-    size_t bitmap_bit = addr / KERNEL_PAGE_SIZE;
+    size_t bitmap_bit = addr / PAGE_SIZE;
     size_t bitmap_index = bitmap_bit / 8;
     MEM_BITMAP[bitmap_index] |= (1 << (bitmap_bit % 8));
 }
 
 static void
 pmm_mark_range_used(uint32_t start_addr, uint32_t end_addr) {
-    for (uint32_t i = start_addr; i < end_addr; i += KERNEL_PAGE_SIZE) {
+    for (uint32_t i = start_addr; i < end_addr; i += PAGE_SIZE) {
         pmm_mark_addr_used(i);
     }
 }
 
 static void
 pmm_mark_addr_free(uint32_t addr) {
-    size_t bitmap_bit = addr / KERNEL_PAGE_SIZE;
+    size_t bitmap_bit = addr / PAGE_SIZE;
     size_t bitmap_index = bitmap_bit / 8;
     MEM_BITMAP[bitmap_index] &= ~(1 << bitmap_bit);
 }
@@ -91,7 +90,7 @@ pmm_alloc_page() {
             // Keep shifting until the first zeroed bit is found.
             for (uint8_t entry = MEM_BITMAP[i]; entry & 1; entry >>= 1, alloc_bit += 1);
             MEM_BITMAP[i] |= (1 << alloc_bit);
-            return (void *)((i * 8 + alloc_bit) * KERNEL_PAGE_SIZE);
+            return (void *)((i * 8 + alloc_bit) * PAGE_SIZE);
         }
     }
     // XXX handle this more gracefully

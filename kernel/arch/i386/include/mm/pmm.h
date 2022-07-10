@@ -6,9 +6,9 @@
 
 // Initialize the physical memory manager.
 void pmm_init(multiboot_info_t);
-// Allocate a (physical) 4M page.
+// Allocate a (physical) 4 KB page.
 void *pmm_alloc_page();
-// Free the specified (physical) 4M page.
+// Free the specified (physical) 4 KB page.
 void pmm_free_page(void *);
 
 #endif /* __PMM_H__ */
