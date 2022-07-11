@@ -5,7 +5,14 @@
 #include <mm/paging.h>
 #include <mm/addr_space.h>
 #include <task.h>
+#include <sched.h>
 #include <kmalloc.h>
+
+static void
+push_uint32(uint32_t *kernel_stack_top, uint32_t value) {
+    *(uint32_t *)(*kernel_stack_top) = value;
+    *kernel_stack_top -= sizeof(uint32_t);
+}
 
 task_control_block_t *
 task_create(uint32_t cr3, vmm_context_t *vmm_ctx, void (*task_fn)(void)) {
@@ -13,24 +20,27 @@ task_create(uint32_t cr3, vmm_context_t *vmm_ctx, void (*task_fn)(void)) {
     uint32_t kernel_stack_top = (uint32_t)alloc_kernel_stack(vmm_ctx);
 
     task_control_block_t *task = (task_control_block_t *)kmalloc(sizeof(task_control_block_t));
+    uint32_t pid = last_pid++;
 
+    // pid
+    push_uint32(&kernel_stack_top, pid);
+    // the return address of the sched_remove frame
+    push_uint32(&kernel_stack_top, (uint32_t)sched_halt_or_crash);
+    // task cleanup function
+    push_uint32(&kernel_stack_top, (uint32_t)sched_remove);
     // EIP
-    *(uint32_t *)kernel_stack_top = (uint32_t)task_fn;
-    kernel_stack_top -= sizeof(uint32_t);
+    push_uint32(&kernel_stack_top, (uint32_t)task_fn);
     // EBP
-    *(uint32_t *)kernel_stack_top = 0;
-    kernel_stack_top -= sizeof(uint32_t);
+    push_uint32(&kernel_stack_top, 0);
     // EBX
-    *(uint32_t *)kernel_stack_top = 0;
-    kernel_stack_top -= sizeof(uint32_t);
+    push_uint32(&kernel_stack_top, 0);
     // ESI
-    *(uint32_t *)kernel_stack_top = 0;
-    kernel_stack_top -= sizeof(uint32_t);
+    push_uint32(&kernel_stack_top, 0);
     // EDI
     *(uint32_t *)kernel_stack_top = 0;
 
     *task = (task_control_block_t) {
-        .pid = last_pid++,
+        .pid = pid,
         .kernel_stack_top = kernel_stack_top,
         .virtual_addr_space = vmm_virtual_to_physical(cr3),
         .esp0 = kernel_stack_top,

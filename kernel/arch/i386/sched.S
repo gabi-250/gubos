@@ -8,6 +8,7 @@
 .globl current_task
 .globl tss
 .globl goto_user_mode
+.globl halt_or_crash
 
 # void do_task_switch(task_control_block_t *next);
 do_task_switch:
@@ -85,3 +86,10 @@ goto_user_mode:
     push $(GDT_USER_CODE_SEGMENT | GDT_USER_RPL)
     push %esi
     iret
+
+#void halt_or_crash();
+halt_or_crash:
+    hlt
+    # We should never reach this point, because after a task returns it is
+    # removed from the scheduler's queue.
+    ud2

@@ -6,6 +6,7 @@
 #include <printk.h>
 #include <mm/vmm.h>
 #include <mm/meminfo.h>
+#include <panic.h>
 
 #include <stddef.h>
 
@@ -14,6 +15,7 @@ extern page_table_t ACTIVE_PAGE_DIRECTORY;
 extern vmm_context_t VMM_CONTEXT;
 
 extern void do_task_switch(task_control_block_t *next);
+extern void halt_or_crash();
 
 int SCHED_INIT = 0;
 
@@ -24,7 +26,7 @@ struct task_list {
 };
 
 struct task_list current_task;
-static struct task_list *tasks_head, *tasks_tail;
+static struct task_list *tasks_head, *tasks_tail, *tasks_sched_head;
 
 void goto_user_mode(uint32_t);
 
@@ -37,7 +39,7 @@ void
 init_sched() {
     SCHED_INIT = 1;
     task_control_block_t *task = task_create((uint32_t)&ACTIVE_PAGE_DIRECTORY, &VMM_CONTEXT, NULL);
-    tasks_head = tasks_tail = kmalloc(sizeof(struct task_list));
+    tasks_sched_head = tasks_head = tasks_tail = kmalloc(sizeof(struct task_list));
 
     // Create the first kernel task
     *tasks_head = (struct task_list) {
@@ -64,9 +66,40 @@ sched_add(task_control_block_t *task, sched_priority_t priority) {
 }
 
 void
+sched_remove(uint32_t pid) {
+    if (pid == 0) {
+        PANIC("cannot remove task 0");
+    }
+
+    struct task_list *task = tasks_tail;
+    if (task->task->pid == pid) {
+        tasks_tail = tasks_tail->next;
+        tasks_head->next = tasks_tail;
+        kfree(task);
+        return;
+    }
+
+    struct task_list *prev;
+    do {
+        prev = task;
+        task = tasks_tail->next;
+        if (task->task->pid == pid) {
+            prev->next = task->next;
+            if (task == tasks_head) {
+                tasks_head = task->next;
+            }
+            kfree(task);
+            return;
+        }
+    } while (task != tasks_tail);
+
+    PANIC("task %u not found", pid);
+}
+
+void
 sched_context_switch() {
-    task_control_block_t *task = tasks_head->task;
-    tasks_head = tasks_head->next;
+    task_control_block_t *task = tasks_sched_head->task;
+    tasks_sched_head = tasks_sched_head->next;
 
     sched_switch_task(task);
 }
@@ -74,4 +107,10 @@ sched_context_switch() {
 void
 switch_to_user_mode(uint32_t user_addr) {
     goto_user_mode(user_addr);
+}
+
+__attribute__((noreturn)) void
+sched_halt_or_crash() {
+    halt_or_crash();
+    __builtin_unreachable();
 }

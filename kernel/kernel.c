@@ -30,7 +30,7 @@ __uninit_kernel() {
 
 static void
 test_task1() {
-    for (;;) {
+    for (int i = 0; i < 10; ++i) {
         printk_debug("task #1 here\n");
         asm volatile("hlt");
     }
@@ -39,7 +39,7 @@ test_task1() {
 
 static void
 test_task2() {
-    for (;;) {
+    for (int i = 0; i < 5; ++i) {
         printk_debug("task #2 here\n");
         asm volatile("hlt");
     }
