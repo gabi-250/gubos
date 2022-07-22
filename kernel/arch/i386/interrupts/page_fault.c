@@ -7,6 +7,7 @@
 #include <mm/paging.h>
 
 extern vmm_context_t VMM_CONTEXT;
+extern paging_context_t ACTIVE_PAGING_CTX;
 
 // Get the (linear) address that triggered the page fault.
 static uint32_t
@@ -52,7 +53,7 @@ page_fault_handler(interrupt_state_t *state, uint32_t err_code) {
 
         }
 
-        paging_map_virtual_to_physical(addr, physical_addr, flags);
+        paging_map_virtual_to_physical(ACTIVE_PAGING_CTX, addr, physical_addr, flags);
         printk_debug("mapped %#x -> %#x\n", addr, physical_addr);
     }
 }

@@ -28,17 +28,14 @@ struct task_list {
 struct task_list current_task;
 static struct task_list *tasks_head, *tasks_tail, *tasks_sched_head;
 
-void goto_user_mode(uint32_t);
-
-void
+static void
 sched_switch_task(task_control_block_t *next) {
     do_task_switch(next);
 }
 
 void
-init_sched() {
-    SCHED_INIT = 1;
-    task_control_block_t *task = task_create((uint32_t)&ACTIVE_PAGE_DIRECTORY, &VMM_CONTEXT, NULL);
+init_sched(paging_context_t paging_ctx) {
+    task_control_block_t *task = task_create(paging_ctx, &VMM_CONTEXT, NULL);
     tasks_sched_head = tasks_head = tasks_tail = kmalloc(sizeof(struct task_list));
 
     // Create the first kernel task
@@ -51,6 +48,8 @@ init_sched() {
     current_task = *tasks_head;
     // Start executing it
     sched_switch_task(current_task.task);
+    // TODO: locking
+    SCHED_INIT = 1;
 }
 
 void
@@ -102,11 +101,6 @@ sched_context_switch() {
     tasks_sched_head = tasks_sched_head->next;
 
     sched_switch_task(task);
-}
-
-void
-switch_to_user_mode(uint32_t user_addr) {
-    goto_user_mode(user_addr);
 }
 
 __attribute__((noreturn)) void

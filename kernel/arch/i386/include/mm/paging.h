@@ -47,8 +47,16 @@ typedef struct page_table {
     uint32_t entries[PAGE_TABLE_SIZE];
 } __attribute__ ((aligned(4096))) page_table_t;
 
+typedef struct paging_context {
+    page_table_t *page_directory;
+    page_table_t *page_tables;
+} paging_context_t;
 
-void init_paging();
+
+paging_context_t init_paging();
+paging_context_t paging_create_page_directory(page_table_t *page_directory,
+        page_table_t *page_tables);
+
 void paging_set_page_directory(uint32_t);
 
 // The format of a page directory entry (with 4KB pages) is:
@@ -60,7 +68,7 @@ void paging_set_page_directory(uint32_t);
 // | 31                   12| 11     9 | 8 | 7   | 6 | 5  | 4   | 3   | 2   | 1   | 0 |
 // |----------------------------------------------------------------------------------|
 // | address of 4KB page    | ignored  | G | PAT | D | A  | PCT | PWT | U/S | R/W | P |
-void paging_map_virtual_to_physical(uint32_t, uint32_t, uint32_t);
+void paging_map_virtual_to_physical(paging_context_t, uint32_t, uint32_t, uint32_t);
 
 // Check whether the specified address is page-aligned.
 bool paging_is_aligned(uint32_t);

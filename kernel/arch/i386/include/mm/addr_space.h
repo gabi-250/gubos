@@ -13,9 +13,16 @@
 #ifndef __ASSEMBLY__
 #include <mm/vmm.h>
 
+typedef struct addr_space_entry {
+    uint32_t virtual_start;
+    uint32_t physical_start;
+    uint32_t page_count;
+    uint32_t flags;
+} addr_space_entry_t;
+
 // Allocate a new kernel stack in the specified context and return the address
 // of its top.
-void *alloc_kernel_stack(vmm_context_t *vmm_context);
+void *alloc_kernel_stack(paging_context_t, vmm_context_t *);
 #endif
 
 #endif /* __ADDR_SPACE_H__ */

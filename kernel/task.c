@@ -15,9 +15,9 @@ push_uint32(uint32_t *kernel_stack_top, uint32_t value) {
 }
 
 task_control_block_t *
-task_create(uint32_t cr3, vmm_context_t *vmm_ctx, void (*task_fn)(void)) {
+task_create(paging_context_t paging_ctx, vmm_context_t *vmm_ctx, void (*task_fn)(void)) {
     static uint32_t last_pid = 0;
-    uint32_t kernel_stack_top = (uint32_t)alloc_kernel_stack(vmm_ctx);
+    uint32_t kernel_stack_top = (uint32_t)alloc_kernel_stack(paging_ctx, vmm_ctx);
 
     task_control_block_t *task = (task_control_block_t *)kmalloc(sizeof(task_control_block_t));
     uint32_t pid = last_pid++;
@@ -38,6 +38,7 @@ task_create(uint32_t cr3, vmm_context_t *vmm_ctx, void (*task_fn)(void)) {
     push_uint32(&kernel_stack_top, 0);
     // EDI
     *(uint32_t *)kernel_stack_top = 0;
+    uint32_t cr3 = (uint32_t)paging_ctx.page_directory;
 
     *task = (task_control_block_t) {
         .pid = pid,

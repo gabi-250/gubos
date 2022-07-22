@@ -13,7 +13,7 @@ typedef struct task_control_block {
     vmm_context_t *vmm_context;
 } task_control_block_t;
 
-task_control_block_t *task_create(uint32_t, vmm_context_t *, void (*)(void));
+task_control_block_t *task_create(paging_context_t, vmm_context_t *, void (*)(void));
 void task_init(task_control_block_t *);
 #endif
 

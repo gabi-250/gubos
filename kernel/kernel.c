@@ -9,14 +9,15 @@
 #include <mm/pmm.h>
 #include <mm/vmm.h>
 #include <mm/paging.h>
+#include <mm/addr_space.h>
 #include <kmalloc.h>
 #include <sched.h>
+#include <init.h>
 #include <panic.h>
 
 kernel_meminfo_t KERNEL_MEMINFO;
 multiboot_info_t MULTIBOOT_INFO;
 
-extern page_table_t ACTIVE_PAGE_DIRECTORY;
 extern vmm_context_t VMM_CONTEXT;
 
 __attribute__ ((constructor)) void
@@ -73,7 +74,7 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     printk_debug("Initializing memory manager\n");
     pmm_init(multiboot_info);
     printk_debug("PMM: OK\n");
-    init_paging(meminfo);
+    paging_context_t paging_ctx = init_paging(meminfo);
     printk_debug("paging: OK\n");
     kmalloc_init();
     printk_debug("kmalloc: OK\n");
@@ -100,29 +101,16 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
         kfree(y);
     }
 
-    init_sched();
+    init_sched(paging_ctx);
 
-    task_control_block_t *task1 = task_create((uint32_t)&ACTIVE_PAGE_DIRECTORY, &VMM_CONTEXT,
-                                  test_task1);
-
-    task_control_block_t *task2 = task_create((uint32_t)&ACTIVE_PAGE_DIRECTORY, &VMM_CONTEXT,
-                                  test_task2);
-
-    task_control_block_t *task3 = task_create((uint32_t)&ACTIVE_PAGE_DIRECTORY, &VMM_CONTEXT,
-                                  test_task3);
-
+    task_control_block_t *task1 = task_create(paging_ctx, &VMM_CONTEXT, test_task1);
+    task_control_block_t *task2 = task_create(paging_ctx, &VMM_CONTEXT, test_task2);
+    task_control_block_t *task3 = task_create(paging_ctx, &VMM_CONTEXT, test_task3);
     sched_add(task1, SCHED_PRIORITY_LOW);
     sched_add(task2, SCHED_PRIORITY_LOW);
     sched_add(task3, SCHED_PRIORITY_LOW);
 
-    /*vmm_map_pages(&VMM_CONTEXT,*/
-    /*USER_STACK_TOP - USER_STACK_SIZE, 0, USER_STACK_PAGE_COUNT,*/
-    /*PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE | PAGE_FLAG_USER);*/
-
-    /*void *virtual_addr = vmm_map_pages(&VMM_CONTEXT, 0, module_addr, 1,*/
-    /*PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE | PAGE_FLAG_USER);*/
-    /*switch_to_user_mode((uint32_t)virtual_addr);*/
-
+    /*init_create_task0((void *)module_addr);*/
 
     for (;;) {
         asm volatile("hlt");

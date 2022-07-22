@@ -1,7 +1,7 @@
 .PHONY: all clean
 
 SRC  = $(wildcard *.s)
-OBJS = $(SRC:.s=)
+OBJS = $(SRC:.s=.o)
 
 all: $(OBJS)
 

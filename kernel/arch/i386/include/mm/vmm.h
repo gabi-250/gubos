@@ -43,6 +43,9 @@ typedef struct vmm_context {
 // Initialize the virtual memory manager.
 void vmm_init();
 
+// Create a new address space.
+vmm_context_t vmm_new_context();
+
 // Allocate page_count consecutive pages starting at the specified virtual address.
 //
 // This maps the pages in the virtual address space of the current process,

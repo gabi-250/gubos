@@ -8,9 +8,12 @@
 #include <mm/pmm.h>
 #include <mm/paging.h>
 #include <mm/meminfo.h>
+#include <mm/addr_space.h>
 
 extern kernel_meminfo_t KERNEL_MEMINFO;
 extern multiboot_info_t MULTIBOOT_INFO;
+
+static addr_space_entry_t ADDR_SPACE[3];
 
 // The VMM state for the current task.
 vmm_context_t VMM_CONTEXT;
@@ -26,36 +29,60 @@ static uint32_t remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_
 
 void
 vmm_init() {
-    VMM_CONTEXT.allocations = (vmm_allocation_tree_t *)kmalloc(sizeof(vmm_allocation_tree_t));
-    *VMM_CONTEXT.allocations = (vmm_allocation_tree_t) {
+    // Kernel text, rodata, data
+    ADDR_SPACE[0] = (addr_space_entry_t) {
+        .virtual_start = KERNEL_MEMINFO.virtual_start,
+        .physical_start = KERNEL_MEMINFO.physical_start,
+        .page_count = (KERNEL_MEMINFO.virtual_end - KERNEL_MEMINFO.virtual_start) / PAGE_SIZE,
+        .flags = PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE
+    };
+    // Kernel heap
+    ADDR_SPACE[1] = (addr_space_entry_t) {
+        .virtual_start = KERNEL_HEAP_START,
+        .physical_start = 0,
+        .page_count = KERNEL_HEAP_SIZE / PAGE_SIZE,
+        .flags = PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE
+    };
+    // Framebuffer
+    struct multiboot_tag_framebuffer_common *framebuffer_info =
+        multiboot_framebuffer_info(MULTIBOOT_INFO.addr);
+    ADDR_SPACE[2] = (addr_space_entry_t) {
+        .virtual_start = KERNEL_MEMINFO.higher_half_base,
+        .physical_start = framebuffer_info->framebuffer_addr,
+        .page_count = 1,
+        .flags = PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE
+    };
+
+    VMM_CONTEXT = vmm_new_context();
+}
+
+vmm_context_t
+vmm_new_context() {
+    vmm_context_t vmm_context;
+
+    vmm_context.allocations = (vmm_allocation_tree_t *)kmalloc(sizeof(vmm_allocation_tree_t));
+    *vmm_context.allocations = (vmm_allocation_tree_t) {
         .alloc = NULL,
         .left = NULL,
         .right = NULL,
     };
     // TODO populate with free blocks and allocations before calling
     // vmm_map_pages
-    VMM_CONTEXT.free_blocks = NULL;
+    vmm_context.free_blocks = NULL;
 
     uint64_t total_page_count = ((uint64_t)1 << 32) / PAGE_SIZE;
     // Initially let's say the entire address space is available
-    add_free_blocks(&VMM_CONTEXT, 0, total_page_count);
+    add_free_blocks(&vmm_context, 0, total_page_count);
 
-    vmm_map_pages(&VMM_CONTEXT, KERNEL_HEAP_START, 0, KERNEL_HEAP_SIZE / PAGE_SIZE,
-                  PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);
+    for (size_t i = 0; i < (sizeof(ADDR_SPACE) / sizeof(addr_space_entry_t)); ++i) {
+        vmm_map_pages(&vmm_context,
+                      ADDR_SPACE[i].virtual_start,
+                      ADDR_SPACE[i].physical_start,
+                      ADDR_SPACE[i].page_count,
+                      ADDR_SPACE[i].flags);
+    }
 
-    // Map the framebuffer
-    struct multiboot_tag_framebuffer_common *framebuffer_info =
-        multiboot_framebuffer_info(MULTIBOOT_INFO.addr);
-
-    vmm_map_pages(&VMM_CONTEXT, KERNEL_MEMINFO.higher_half_base, framebuffer_info->framebuffer_addr, 1,
-                  PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);
-
-    // Map the kernel
-    uint32_t page_count = (KERNEL_MEMINFO.virtual_end - KERNEL_MEMINFO.virtual_start) /
-                          PAGE_SIZE;
-    vmm_map_pages(&VMM_CONTEXT, KERNEL_MEMINFO.virtual_start,
-                  KERNEL_MEMINFO.physical_start, page_count,
-                  PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);
+    return vmm_context;
 }
 
 void *

@@ -32,8 +32,9 @@ $(ARCHDIR)/mm/paging.o\
 $(ARCHDIR)/mm/addr_space.o\
 $(ARCHDIR)/paging_bootstrap.o\
 $(ARCHDIR)/schedS.o\
+$(ARCHDIR)/initS.o\
 
-KERNEL_OBJS = $(KERNEL_ARCH_OBJS) kernel.o kmalloc.o schedc.o task.o
+KERNEL_OBJS = $(KERNEL_ARCH_OBJS) kernel.o kmalloc.o schedc.o task.o initc.o
 
 OBJS =\
 $(ARCHDIR)/crti.o \
@@ -74,6 +75,12 @@ schedc.o:
 
 $(ARCHDIR)/schedS.o:
 	$(CC) -MD -c $(ARCHDIR)/sched.S -o $(ARCHDIR)/schedS.o -std=gnu11 $(CFLAGS)
+
+initc.o:
+	$(CC) -MD -c init.c -o initc.o -std=gnu11 $(CFLAGS)
+
+$(ARCHDIR)/initS.o:
+	$(CC) -MD -c $(ARCHDIR)/init.S -o $(ARCHDIR)/initS.o -std=gnu11 $(CFLAGS)
 
 %.o: %.c
 	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS)
