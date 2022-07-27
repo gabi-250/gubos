@@ -22,7 +22,7 @@ init_paging() {
     paging_context_t paging_ctx = paging_create_page_directory(&INIT_ACTIVE_PAGE_DIRECTORY,
                                   INIT_KERNEL_PAGE_TABLES);
 
-    uint32_t cr3 = vmm_virtual_to_physical((uint32_t)&INIT_ACTIVE_PAGE_DIRECTORY);
+    uint32_t cr3 = vmm_virtual_to_physical((uint32_t)paging_ctx.page_directory);
     paging_set_page_directory(cr3);
 
     ACTIVE_PAGING_CTX = paging_ctx;
@@ -31,11 +31,10 @@ init_paging() {
 }
 
 paging_context_t
-paging_create_page_directory(page_table_t *init_page_directory, page_table_t *init_page_tables) {
-    page_table_t *page_directory = init_page_directory ? init_page_directory : kmalloc(sizeof(
-                                       page_table_t));
-    page_table_t *page_tables = init_page_tables ? init_page_tables : kmalloc(sizeof(
-                                    page_table_t) * PAGE_TABLE_SIZE);
+paging_create_page_directory(page_table_t *page_directory, page_table_t *page_tables) {
+    ASSERT(page_directory, "page_directory should not be NULL");
+    ASSERT(page_tables, "page_tables should not be NULL");
+
     paging_context_t paging_ctx = (paging_context_t) {
         .page_directory = page_directory,
         .page_tables = page_tables,
@@ -52,14 +51,19 @@ paging_create_page_directory(page_table_t *init_page_directory, page_table_t *in
         uint32_t virtual_addr = higher_half_base + i * PAGE_SIZE;
         uint32_t physical_addr = i * PAGE_SIZE;
 
+
         paging_map_virtual_to_physical(paging_ctx, virtual_addr, physical_addr,
                                        PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);
     }
 
-    // Map the first heap page to ensure we don't page fault during vmm_init
+    // Map the heap pages to ensure we don't page fault during vmm_init
     // (vmm_init uses kmalloc, and vmm_init should _not_ page fault).
-    paging_map_virtual_to_physical(paging_ctx, KERNEL_HEAP_START, (uint32_t)pmm_alloc_page(),
-                                   PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);
+    for (uint64_t i = 0; i * PAGE_SIZE < KERNEL_HEAP_SIZE; ++i) {
+        uint32_t virtual_addr = KERNEL_HEAP_VIRT_START + i * PAGE_SIZE;
+        uint32_t physical_addr = KERNEL_HEAP_PHYS_START + i * PAGE_SIZE;
+        paging_map_virtual_to_physical(paging_ctx, virtual_addr, physical_addr,
+                                       PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);
+    }
 
     uint32_t cr3 = vmm_virtual_to_physical((uint32_t)&page_directory);
     // The last 4MB of virtual address space is reserved for bookkeeping: we map
@@ -76,6 +80,20 @@ paging_create_page_directory(page_table_t *init_page_directory, page_table_t *in
     return paging_ctx;
 }
 
+paging_context_t
+paging_clone_paging_context(paging_context_t paging_ctx) {
+    page_table_t *page_directory = kmalloc(sizeof(page_table_t));
+    page_table_t *page_tables = kmalloc(sizeof(page_table_t) * PAGE_TABLE_SIZE);
+
+    memcpy(page_directory, paging_ctx.page_directory, sizeof(page_table_t));
+    memcpy(page_tables, paging_ctx.page_tables, sizeof(page_table_t) * PAGE_TABLE_SIZE);
+
+    return (paging_context_t) {
+        .page_directory = page_directory,
+        .page_tables = page_tables,
+    };
+}
+
 // Load CR3 with the **physical** address of the page directory.
 void
 paging_set_page_directory(uint32_t addr) {
@@ -85,8 +103,7 @@ paging_set_page_directory(uint32_t addr) {
 
 void
 paging_map_virtual_to_physical(paging_context_t paging_ctx, uint32_t virtual_addr,
-                               uint32_t physical_addr,
-                               uint32_t flags) {
+                               uint32_t physical_addr, uint32_t flags) {
     page_table_t *page_table = paging_ctx.page_tables + PAGE_DIRECTORY_INDEX(virtual_addr);
     // page_table_addr is 4096 bytes aligned, so no need to clear the
     // lower 12 bits where the flags go

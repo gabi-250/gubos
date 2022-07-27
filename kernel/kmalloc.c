@@ -5,7 +5,7 @@ kmalloc_header_t *KMALLOC_HEAD;
 
 void
 kmalloc_init() {
-    KMALLOC_HEAD = (kmalloc_header_t *)KERNEL_HEAP_START;
+    KMALLOC_HEAD = (kmalloc_header_t *)KERNEL_HEAP_VIRT_START;
     *KMALLOC_HEAD = (kmalloc_header_t) {
         .size = KERNEL_HEAP_SIZE - sizeof(kmalloc_header_t),
         .next = NULL,

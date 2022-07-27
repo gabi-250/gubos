@@ -2,10 +2,12 @@
 #define __KMALLOC_H__
 
 #include <stddef.h>
+#include <mm/vmm.h>
 
-#define KERNEL_HEAP_START 0xE0000000
+#define KERNEL_HEAP_VIRT_START 0xE0000000
+#define KERNEL_HEAP_PHYS_START 0x00800000
 // 16M
-#define KERNEL_HEAP_SIZE  0x01000000
+#define KERNEL_HEAP_SIZE  0x03000000
 
 typedef struct kmalloc_header {
     // The size of this free region

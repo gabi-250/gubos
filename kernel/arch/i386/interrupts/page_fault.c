@@ -5,9 +5,9 @@
 #include <mm/vmm.h>
 #include <mm/pmm.h>
 #include <mm/paging.h>
+#include <task.h>
 
-extern vmm_context_t VMM_CONTEXT;
-extern paging_context_t ACTIVE_PAGING_CTX;
+extern struct task_list CURRENT_TASK;
 
 // Get the (linear) address that triggered the page fault.
 static uint32_t
@@ -41,11 +41,11 @@ page_fault_handler(interrupt_state_t *state, uint32_t err_code) {
         }
     } else {
         // Page not present
-        vmm_allocation_t *alloc = vmm_find_allocation(&VMM_CONTEXT, addr);
+        vmm_allocation_t alloc = vmm_find_allocation(&CURRENT_TASK.task->vmm_context, addr);
 
-        ASSERT(alloc, "invalid VMM state");
+        ASSERT(alloc.page_count, "invalid VMM state");
 
-        uint32_t physical_addr = alloc->physical_addr ? alloc->physical_addr : (uint32_t)pmm_alloc_page();
+        uint32_t physical_addr = alloc.physical_addr ? alloc.physical_addr : (uint32_t)pmm_alloc_page();
 
         uint32_t flags = PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE;
         if (err_code & PAGING_ERR_CODE_US) {
@@ -53,7 +53,7 @@ page_fault_handler(interrupt_state_t *state, uint32_t err_code) {
 
         }
 
-        paging_map_virtual_to_physical(ACTIVE_PAGING_CTX, addr, physical_addr, flags);
+        paging_map_virtual_to_physical(CURRENT_TASK.task->paging_ctx, addr, physical_addr, flags);
         printk_debug("mapped %#x -> %#x\n", addr, physical_addr);
     }
 }

@@ -12,20 +12,13 @@
 
 extern kernel_meminfo_t KERNEL_MEMINFO;
 extern page_table_t ACTIVE_PAGE_DIRECTORY;
-extern vmm_context_t VMM_CONTEXT;
 
 extern void do_task_switch(task_control_block_t *next);
 extern void halt_or_crash();
 
 int SCHED_INIT = 0;
 
-struct task_list {
-    task_control_block_t *task;
-    sched_priority_t priority;
-    struct task_list *next;
-};
-
-struct task_list current_task;
+struct task_list CURRENT_TASK;
 static struct task_list *tasks_head, *tasks_tail, *tasks_sched_head;
 
 static void
@@ -34,26 +27,26 @@ sched_switch_task(task_control_block_t *next) {
 }
 
 void
-init_sched(paging_context_t paging_ctx) {
-    task_control_block_t *task = task_create(paging_ctx, &VMM_CONTEXT, NULL);
+init_sched(paging_context_t paging_ctx, vmm_context_t vmm_context) {
+    task_control_block_t *task = task_create(paging_ctx, vmm_context, NULL, NULL, false);
     tasks_sched_head = tasks_head = tasks_tail = kmalloc(sizeof(struct task_list));
 
     // Create the first kernel task
     *tasks_head = (struct task_list) {
         .next = tasks_head,
         .task = task,
-        .priority = SCHED_PRIORITY_LOW,
+        .priority = TASK_PRIORITY_LOW,
     };
 
-    current_task = *tasks_head;
+    CURRENT_TASK = *tasks_head;
     // Start executing it
-    sched_switch_task(current_task.task);
+    sched_switch_task(CURRENT_TASK.task);
     // TODO: locking
     SCHED_INIT = 1;
 }
 
 void
-sched_add(task_control_block_t *task, sched_priority_t priority) {
+sched_add(task_control_block_t *task, task_priority_t priority) {
     struct task_list *new_tasks = kmalloc(sizeof(struct task_list));
     *new_tasks = (struct task_list) {
         .next = tasks_tail->next,

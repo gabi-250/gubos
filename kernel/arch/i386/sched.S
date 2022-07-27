@@ -5,7 +5,7 @@
 #include "mm/addr_space.h"
 
 .globl do_task_switch
-.globl current_task
+.globl CURRENT_TASK
 .globl tss
 .globl halt_or_crash
 
@@ -20,11 +20,11 @@ do_task_switch:
     push %ebx
     push %esi
     push %edi
-    # Save the ESP of the previous task (current_task->kernel_stack_top = ESP)
-    mov current_task, %ebx
+    # Save the ESP of the previous task (CURRENT_TASK->kernel_stack_top = ESP)
+    mov CURRENT_TASK, %ebx
     mov %esp, 4(%ebx)
-    # current_task = next
-    mov %eax, current_task
+    # CURRENT_TASK = next
+    mov %eax, CURRENT_TASK
     # Load the next task
     # ESP = next->kernel_stack_top
     mov 4(%eax), %esp

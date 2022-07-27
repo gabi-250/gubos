@@ -15,9 +15,6 @@ extern multiboot_info_t MULTIBOOT_INFO;
 
 static addr_space_entry_t ADDR_SPACE[3];
 
-// The VMM state for the current task.
-vmm_context_t VMM_CONTEXT;
-
 static void add_allocation(vmm_context_t *vmm_context, uint32_t virtual_addr,
                            uint32_t physical_addr, uint32_t page_count, uint32_t flags);
 static void remove_allocation(vmm_context_t *vmm_context,
@@ -26,8 +23,9 @@ static void add_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
                             uint32_t page_count);
 static uint32_t remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
                                    uint32_t page_count);
+static vmm_context_t create_empty_ctx();
 
-void
+vmm_context_t
 vmm_init() {
     // Kernel text, rodata, data
     ADDR_SPACE[0] = (addr_space_entry_t) {
@@ -38,8 +36,8 @@ vmm_init() {
     };
     // Kernel heap
     ADDR_SPACE[1] = (addr_space_entry_t) {
-        .virtual_start = KERNEL_HEAP_START,
-        .physical_start = 0,
+        .virtual_start = KERNEL_HEAP_VIRT_START,
+        .physical_start = KERNEL_HEAP_PHYS_START,
         .page_count = KERNEL_HEAP_SIZE / PAGE_SIZE,
         .flags = PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE
     };
@@ -53,22 +51,12 @@ vmm_init() {
         .flags = PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE
     };
 
-    VMM_CONTEXT = vmm_new_context();
+    return vmm_new_context();
 }
 
 vmm_context_t
 vmm_new_context() {
-    vmm_context_t vmm_context;
-
-    vmm_context.allocations = (vmm_allocation_tree_t *)kmalloc(sizeof(vmm_allocation_tree_t));
-    *vmm_context.allocations = (vmm_allocation_tree_t) {
-        .alloc = NULL,
-        .left = NULL,
-        .right = NULL,
-    };
-    // TODO populate with free blocks and allocations before calling
-    // vmm_map_pages
-    vmm_context.free_blocks = NULL;
+    vmm_context_t vmm_context = create_empty_ctx();
 
     uint64_t total_page_count = ((uint64_t)1 << 32) / PAGE_SIZE;
     // Initially let's say the entire address space is available
@@ -83,6 +71,77 @@ vmm_new_context() {
     }
 
     return vmm_context;
+}
+
+vmm_free_blocks_t *
+clone_free_blocks(vmm_free_blocks_t *orig_free_blocks) {
+    if (!orig_free_blocks) {
+        return NULL;
+    }
+
+    vmm_free_blocks_t *free_blocks = (vmm_free_blocks_t *)kmalloc(sizeof(vmm_free_blocks_t));
+    vmm_free_blocks_t *prev = NULL;
+
+    vmm_free_blocks_t *current = free_blocks;
+    while (orig_free_blocks) {
+        if (prev) {
+            prev->next = current;
+        }
+
+        prev = current;
+
+        *current = (vmm_free_blocks_t) {
+            .virtual_addr = orig_free_blocks->virtual_addr,
+            .page_count = orig_free_blocks->page_count,
+            .next = NULL,
+        };
+
+        current = (vmm_free_blocks_t *)kmalloc(sizeof(vmm_free_blocks_t));
+        orig_free_blocks = orig_free_blocks->next;
+    }
+
+    return free_blocks;
+}
+
+void
+clone_allocation_tree(vmm_allocation_tree_t *orig_allocations, vmm_allocation_tree_t *allocations) {
+    if (orig_allocations) {
+        allocations->alloc = orig_allocations->alloc;
+
+        if (orig_allocations->left) {
+            allocations->left = (vmm_allocation_tree_t *)kmalloc(sizeof(vmm_allocation_tree_t));
+            allocations->left->parent = allocations;
+            clone_allocation_tree(orig_allocations->left, allocations->left);
+        }
+
+        if (orig_allocations->right) {
+            allocations->right = (vmm_allocation_tree_t *)kmalloc(sizeof(vmm_allocation_tree_t));
+            allocations->right->parent = allocations;
+            clone_allocation_tree(orig_allocations->right, allocations->right);
+        }
+    }
+}
+
+vmm_allocation_tree_t *
+clone_allocations(vmm_allocation_tree_t *orig_allocations) {
+    if (!orig_allocations) {
+        return NULL;
+    }
+
+    vmm_allocation_tree_t *allocations = (vmm_allocation_tree_t *)kmalloc(sizeof(
+            vmm_allocation_tree_t));
+
+    clone_allocation_tree(orig_allocations, allocations);
+
+    return allocations;
+}
+
+vmm_context_t
+vmm_clone_context(vmm_context_t orig_vmm_context) {
+    return (vmm_context_t) {
+        .free_blocks = clone_free_blocks(orig_vmm_context.free_blocks),
+        .allocations = clone_allocations(orig_vmm_context.allocations)
+    };
 }
 
 void *
@@ -114,12 +173,12 @@ vmm_unmap_pages(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t page
     vmm_allocation_tree_t *allocations = vmm_context->allocations;
 
     while (allocations) {
-        if (virtual_addr == allocations->alloc->virtual_addr) {
-            if (page_count < allocations->alloc->virtual_addr) {
+        if (virtual_addr == allocations->alloc.virtual_addr) {
+            if (page_count < allocations->alloc.virtual_addr) {
                 // Shift the allocation
-                allocations->alloc->virtual_addr += PAGE_SIZE * page_count;
-                allocations->alloc->page_count -= page_count;
-            } else if (page_count == allocations->alloc->virtual_addr) {
+                allocations->alloc.virtual_addr += PAGE_SIZE * page_count;
+                allocations->alloc.page_count -= page_count;
+            } else if (page_count == allocations->alloc.virtual_addr) {
                 // Delete the node altogether
                 remove_allocation(vmm_context, allocations);
             } else {
@@ -127,7 +186,7 @@ vmm_unmap_pages(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t page
             }
 
             return;
-        } else if (virtual_addr < allocations->alloc->virtual_addr) {
+        } else if (virtual_addr < allocations->alloc.virtual_addr) {
             allocations = allocations->left;
         } else {
             allocations = allocations->right;
@@ -137,13 +196,13 @@ vmm_unmap_pages(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t page
     PANIC("allocation to unmap not found in allocation tree");
 }
 
-vmm_allocation_t *
+vmm_allocation_t
 vmm_find_allocation(vmm_context_t *vmm_context, uint32_t virtual_addr) {
     vmm_allocation_tree_t *allocations = vmm_context->allocations;
 
     while (allocations) {
-        uint32_t current_block = allocations->alloc->virtual_addr;
-        uint32_t page_count = allocations->alloc->page_count;
+        uint32_t current_block = allocations->alloc.virtual_addr;
+        uint32_t page_count = allocations->alloc.page_count;
         if (virtual_addr >= current_block
                 && virtual_addr < current_block + page_count * PAGE_SIZE) {
             return allocations->alloc;
@@ -154,7 +213,9 @@ vmm_find_allocation(vmm_context_t *vmm_context, uint32_t virtual_addr) {
         }
     }
     // Not in tree:
-    return NULL;
+    return (vmm_allocation_t) {
+        0
+    };
 }
 
 inline uint32_t
@@ -197,9 +258,8 @@ add_allocation(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t physi
     vmm_allocation_tree_t *allocations = vmm_context->allocations;
 
     // Empty allocations tree
-    if (!allocations->alloc) {
-        allocations->alloc = (vmm_allocation_t *)kmalloc(sizeof(vmm_allocation_t));
-        *allocations->alloc = (vmm_allocation_t) {
+    if (!allocations->alloc.page_count) {
+        allocations->alloc = (vmm_allocation_t) {
             virtual_addr = virtual_addr,
             physical_addr = physical_addr,
             page_count = page_count,
@@ -212,7 +272,7 @@ add_allocation(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t physi
     vmm_allocation_tree_t *prev = NULL;
     while (allocations) {
         prev = allocations;
-        if (virtual_addr < allocations->alloc->virtual_addr) {
+        if (virtual_addr < allocations->alloc.virtual_addr) {
             allocations = allocations->left;
         } else {
             allocations = allocations->right;
@@ -224,8 +284,7 @@ add_allocation(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t physi
     }
 
     vmm_allocation_tree_t *new_node = (vmm_allocation_tree_t *)kmalloc(sizeof(vmm_allocation_tree_t));
-    vmm_allocation_t *alloc= (vmm_allocation_t *)kmalloc(sizeof(vmm_allocation_t));
-    *alloc = (vmm_allocation_t) {
+    vmm_allocation_t alloc = (vmm_allocation_t) {
         .virtual_addr = virtual_addr,
         .physical_addr = physical_addr,
         .page_count = page_count,
@@ -238,7 +297,7 @@ add_allocation(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t physi
     };
 
     new_node->parent = prev;
-    if (virtual_addr < prev->alloc->virtual_addr) {
+    if (virtual_addr < prev->alloc.virtual_addr) {
         prev->left = new_node;
     } else {
         prev->right = new_node;
@@ -410,4 +469,19 @@ add_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t page
             };
         }
     }
+}
+
+static vmm_context_t
+create_empty_ctx() {
+    vmm_context_t vmm_context;
+
+    vmm_context.allocations = (vmm_allocation_tree_t *)kmalloc(sizeof(vmm_allocation_tree_t));
+    *vmm_context.allocations = (vmm_allocation_tree_t) {
+        .alloc = { 0 },
+        .left = NULL,
+        .right = NULL,
+    };
+    vmm_context.free_blocks = NULL;
+
+    return vmm_context;
 }

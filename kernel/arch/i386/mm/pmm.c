@@ -44,7 +44,7 @@ pmm_init(multiboot_info_t multiboot_info) {
     // Mark the kernel physical address range as used:
     pmm_mark_range_used(KERNEL_MEMINFO.physical_start, KERNEL_MEMINFO.physical_end);
     // Mark the kernel heap address range as used:
-    uint32_t heap_start = vmm_virtual_to_physical(KERNEL_HEAP_START);
+    uint32_t heap_start = KERNEL_HEAP_PHYS_START;
     uint32_t heap_end = heap_start + KERNEL_HEAP_SIZE - 1;
     pmm_mark_range_used(heap_start, heap_end);
 

@@ -19,7 +19,7 @@ typedef struct vmm_allocation {
 
 // The allocation search tree.
 typedef struct vmm_allocation_tree {
-    vmm_allocation_t *alloc;
+    vmm_allocation_t alloc;
     struct vmm_allocation_tree *left;
     struct vmm_allocation_tree *right;
     struct vmm_allocation_tree *parent;
@@ -41,10 +41,13 @@ typedef struct vmm_context {
 } vmm_context_t;
 
 // Initialize the virtual memory manager.
-void vmm_init();
+vmm_context_t vmm_init();
 
 // Create a new address space.
 vmm_context_t vmm_new_context();
+
+// Clone an existing address space.
+vmm_context_t vmm_clone_context(vmm_context_t);
 
 // Allocate page_count consecutive pages starting at the specified virtual address.
 //
@@ -62,7 +65,7 @@ void *vmm_map_pages(vmm_context_t *, uint32_t virtual_addr, uint32_t physical_ad
 void vmm_unmap_pages(vmm_context_t *, uint32_t virtual_addr, uint32_t page_count);
 
 // Find the allocation that corresponds to the specified address.
-vmm_allocation_t *vmm_find_allocation(vmm_context_t *, uint32_t virtual_addr);
+vmm_allocation_t vmm_find_allocation(vmm_context_t *, uint32_t virtual_addr);
 
 // Map the specified virtual address to a physical address.
 uint32_t vmm_virtual_to_physical(uint32_t addr);

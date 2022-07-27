@@ -15,9 +15,13 @@ push_uint32(uint32_t *kernel_stack_top, uint32_t value) {
 }
 
 task_control_block_t *
-task_create(paging_context_t paging_ctx, vmm_context_t *vmm_ctx, void (*task_fn)(void)) {
+task_create(paging_context_t paging_ctx, vmm_context_t vmm_ctx, void (*task_fn)(void),
+            void *ret_addr, bool is_userspace) {
     static uint32_t last_pid = 0;
-    uint32_t kernel_stack_top = (uint32_t)alloc_kernel_stack(paging_ctx, vmm_ctx);
+    uint32_t kernel_stack_top = (uint32_t)alloc_kernel_stack(paging_ctx, &vmm_ctx);
+
+    paging_context_t task_paging_ctx = is_userspace ?
+                                       paging_clone_paging_context(paging_ctx) : paging_ctx;
 
     task_control_block_t *task = (task_control_block_t *)kmalloc(sizeof(task_control_block_t));
     uint32_t pid = last_pid++;
@@ -28,6 +32,10 @@ task_create(paging_context_t paging_ctx, vmm_context_t *vmm_ctx, void (*task_fn)
     push_uint32(&kernel_stack_top, (uint32_t)sched_halt_or_crash);
     // task cleanup function
     push_uint32(&kernel_stack_top, (uint32_t)sched_remove);
+    // push an address for task_fn to use
+    if (ret_addr) {
+        push_uint32(&kernel_stack_top, (uint32_t)ret_addr);
+    }
     // EIP
     push_uint32(&kernel_stack_top, (uint32_t)task_fn);
     // EBP
@@ -38,7 +46,7 @@ task_create(paging_context_t paging_ctx, vmm_context_t *vmm_ctx, void (*task_fn)
     push_uint32(&kernel_stack_top, 0);
     // EDI
     *(uint32_t *)kernel_stack_top = 0;
-    uint32_t cr3 = (uint32_t)paging_ctx.page_directory;
+    uint32_t cr3 = (uint32_t)task_paging_ctx.page_directory;
 
     *task = (task_control_block_t) {
         .pid = pid,
@@ -46,6 +54,7 @@ task_create(paging_context_t paging_ctx, vmm_context_t *vmm_ctx, void (*task_fn)
         .virtual_addr_space = vmm_virtual_to_physical(cr3),
         .esp0 = kernel_stack_top,
         .vmm_context = vmm_ctx,
+        .paging_ctx = task_paging_ctx
     };
 
     return task;

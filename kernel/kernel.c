@@ -18,8 +18,6 @@
 kernel_meminfo_t KERNEL_MEMINFO;
 multiboot_info_t MULTIBOOT_INFO;
 
-extern vmm_context_t VMM_CONTEXT;
-
 __attribute__ ((constructor)) void
 __init_kernel() {
 }
@@ -54,6 +52,20 @@ test_task3() {
     }
 }
 
+__attribute__((unused)) static void
+kmalloc_some_ints() {
+    for (int i = 0; i < 1000; ++i) {
+        int *x = (int *)kmalloc(sizeof(int));
+        *x = 4;
+        printk_debug("i=%d kmalloc'd x @ %#x. x is %d\n", i, (uint32_t)x, *x);
+        long long *y = (long long *)kmalloc(sizeof(long long));
+        *y = 4;
+        printk_debug("kmalloc'd x @ %#x. y is %lld\n", y, *y);
+        kfree(x);
+        kfree(y);
+    }
+}
+
 void
 kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     KERNEL_MEMINFO = meminfo;
@@ -78,7 +90,9 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     printk_debug("paging: OK\n");
     kmalloc_init();
     printk_debug("kmalloc: OK\n");
-    vmm_init();
+
+    vmm_context_t vmm_context = vmm_init();
+
     printk_debug("VMM: OK\n");
 
     struct multiboot_tag_module *module;
@@ -90,27 +104,19 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     uint32_t module_addr = module->mod_start;
     printk_debug("module is at %#x\n", module_addr);
 
-    for (int i = 0; i < 1000; ++i) {
-        int *x = (int *)kmalloc(sizeof(int));
-        *x = 4;
-        printk_debug("i=%d kmalloc'd x @ %#x. x is %d\n", i, (uint32_t)x, *x);
-        long long *y = (long long *)kmalloc(sizeof(long long));
-        *y = 4;
-        printk_debug("kmalloc'd x @ %#x. y is %lld\n", y, *y);
-        kfree(x);
-        kfree(y);
-    }
+    /*kmalloc_some_ints();*/
 
-    init_sched(paging_ctx);
+    init_sched(paging_ctx, vmm_context);
 
-    task_control_block_t *task1 = task_create(paging_ctx, &VMM_CONTEXT, test_task1);
-    task_control_block_t *task2 = task_create(paging_ctx, &VMM_CONTEXT, test_task2);
-    task_control_block_t *task3 = task_create(paging_ctx, &VMM_CONTEXT, test_task3);
-    sched_add(task1, SCHED_PRIORITY_LOW);
-    sched_add(task2, SCHED_PRIORITY_LOW);
-    sched_add(task3, SCHED_PRIORITY_LOW);
+    task_control_block_t *task1 = task_create(paging_ctx, vmm_context, test_task1, NULL, false);
+    task_control_block_t *task2 = task_create(paging_ctx, vmm_context, test_task2, NULL, false);
+    task_control_block_t *task3 = task_create(paging_ctx, vmm_context, test_task3, NULL, false);
+    sched_add(task1, TASK_PRIORITY_LOW);
+    sched_add(task2, TASK_PRIORITY_LOW);
+    sched_add(task3, TASK_PRIORITY_LOW);
 
-    /*init_create_task0((void *)module_addr);*/
+    task_control_block_t *init_task = init_create_task0(paging_ctx, vmm_context, (void *)module_addr);
+    sched_add(init_task, TASK_PRIORITY_LOW);
 
     for (;;) {
         asm volatile("hlt");

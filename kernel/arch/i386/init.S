@@ -6,7 +6,7 @@
 
 .globl init_goto_user_mode
 
-# void init_goto_user_mode(uint32_t user_mode_addr);
+# init_goto_user_mode: the top of the stack should contain the userspace address to jump to
 init_goto_user_mode:
     cli
     mov $(GDT_USER_DATA_SEGMENT | GDT_USER_RPL), %ax
@@ -15,7 +15,7 @@ init_goto_user_mode:
     mov %ax, %fs
     mov %ax, %gs
     # get the return address
-    mov 4(%esp), %esi
+    mov (%esp), %esi
     # When returning from an interrupt, the top of the stack is supposed to
     # look like this:
     #  +---------------------+
