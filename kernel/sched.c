@@ -5,6 +5,7 @@
 #include <kmalloc.h>
 #include <printk.h>
 #include <mm/vmm.h>
+#include <mm/paging.h>
 #include <mm/meminfo.h>
 #include <panic.h>
 
@@ -92,6 +93,7 @@ void
 sched_context_switch() {
     task_control_block_t *task = tasks_sched_head->task;
     tasks_sched_head = tasks_sched_head->next;
+    printk_debug("Running task %u\n", task->pid);
 
     sched_switch_task(task);
 }

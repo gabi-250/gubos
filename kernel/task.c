@@ -7,6 +7,7 @@
 #include <task.h>
 #include <sched.h>
 #include <kmalloc.h>
+#include <panic.h>
 
 static void
 push_uint32(uint32_t *kernel_stack_top, uint32_t value) {
@@ -21,7 +22,7 @@ task_create(paging_context_t paging_ctx, vmm_context_t vmm_ctx, void (*task_fn)(
     uint32_t kernel_stack_top = (uint32_t)alloc_kernel_stack(paging_ctx, &vmm_ctx);
 
     paging_context_t task_paging_ctx = is_userspace ?
-                                       paging_clone_paging_context(paging_ctx) : paging_ctx;
+                                       vmm_clone_paging_context(&vmm_ctx, paging_ctx) : paging_ctx;
 
     task_control_block_t *task = (task_control_block_t *)kmalloc(sizeof(task_control_block_t));
     uint32_t pid = last_pid++;
@@ -46,12 +47,24 @@ task_create(paging_context_t paging_ctx, vmm_context_t vmm_ctx, void (*task_fn)(
     push_uint32(&kernel_stack_top, 0);
     // EDI
     *(uint32_t *)kernel_stack_top = 0;
-    uint32_t cr3 = (uint32_t)task_paging_ctx.page_directory;
+
+    uint32_t cr3 = 0;
+
+    if (is_userspace) {
+        vmm_allocation_t alloc = vmm_find_allocation(&vmm_ctx, (uint32_t)task_paging_ctx.page_directory);
+
+        ASSERT(alloc.page_count, "invalid VMM state");
+
+        cr3 = alloc.physical_addr;
+    } else {
+        cr3 = vmm_virtual_to_physical((uint32_t)task_paging_ctx.page_directory);
+    }
+
 
     *task = (task_control_block_t) {
         .pid = pid,
         .kernel_stack_top = kernel_stack_top,
-        .virtual_addr_space = vmm_virtual_to_physical(cr3),
+        .virtual_addr_space = cr3,
         .esp0 = kernel_stack_top,
         .vmm_context = vmm_ctx,
         .paging_ctx = task_paging_ctx

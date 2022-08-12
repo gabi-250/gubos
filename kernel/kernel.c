@@ -35,7 +35,6 @@ test_task1() {
     }
 }
 
-
 static void
 test_task2() {
     for (int i = 0; i < 5; ++i) {

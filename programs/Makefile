@@ -1,14 +1,14 @@
 .PHONY: all clean
 
 SRC  = $(wildcard *.s)
-OBJS = $(SRC:.s=.o)
+OBJS = $(SRC:.s=.bin)
 
 all: $(OBJS)
 
 %.o: %.s
 	$(CC) -MD -c $< -o $@
 
-%: %.o
+%.bin: %.o
 	objcopy -O binary -j .text $< $@
 
 clean:

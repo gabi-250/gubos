@@ -42,7 +42,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-
 typedef struct page_table {
     uint32_t entries[PAGE_TABLE_SIZE];
 } __attribute__ ((aligned(4096))) page_table_t;
@@ -56,8 +55,6 @@ typedef struct paging_context {
 paging_context_t init_paging();
 paging_context_t paging_create_page_directory(page_table_t *page_directory,
         page_table_t *page_tables);
-
-paging_context_t paging_clone_paging_context(paging_context_t paging_ctx);
 
 void paging_set_page_directory(uint32_t);
 

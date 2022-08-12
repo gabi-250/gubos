@@ -2,7 +2,7 @@
 #define __VMM_H__
 
 #include <stdint.h>
-#include "mm/paging.h"
+#include <mm/paging.h>
 
 // A virtual allocation.
 //
@@ -66,6 +66,8 @@ void vmm_unmap_pages(vmm_context_t *, uint32_t virtual_addr, uint32_t page_count
 
 // Find the allocation that corresponds to the specified address.
 vmm_allocation_t vmm_find_allocation(vmm_context_t *, uint32_t virtual_addr);
+
+paging_context_t vmm_clone_paging_context(vmm_context_t *vmm_ctx, paging_context_t paging_ctx);
 
 // Map the specified virtual address to a physical address.
 uint32_t vmm_virtual_to_physical(uint32_t addr);

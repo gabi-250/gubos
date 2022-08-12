@@ -218,6 +218,22 @@ vmm_find_allocation(vmm_context_t *vmm_context, uint32_t virtual_addr) {
     };
 }
 
+paging_context_t
+vmm_clone_paging_context(vmm_context_t *vmm_ctx, paging_context_t paging_ctx) {
+    uint32_t physical_addr = (uint32_t)pmm_alloc_page();
+    page_table_t *page_directory = (page_table_t *)vmm_map_pages(vmm_ctx, 0, physical_addr, 1, 0);
+
+    memcpy(page_directory, paging_ctx.page_directory, sizeof(page_table_t));
+
+    page_directory->entries[PAGE_TABLE_SIZE - 1] = physical_addr | PAGE_FLAG_PRESENT |
+            PAGE_FLAG_WRITE;
+
+    return (paging_context_t) {
+        .page_directory = page_directory,
+        .page_tables = paging_ctx.page_tables,
+    };
+}
+
 inline uint32_t
 vmm_virtual_to_physical(uint32_t addr) {
     // Subtract (virtual_start - physical_start) to get the physical address.

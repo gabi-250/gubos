@@ -2,6 +2,7 @@
 #define __SCHED_H__
 
 #include <task.h>
+#include <mm/vmm.h>
 #include <mm/paging.h>
 
 void init_sched(paging_context_t paging_ctx, vmm_context_t vmm_context);

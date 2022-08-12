@@ -80,20 +80,6 @@ paging_create_page_directory(page_table_t *page_directory, page_table_t *page_ta
     return paging_ctx;
 }
 
-paging_context_t
-paging_clone_paging_context(paging_context_t paging_ctx) {
-    page_table_t *page_directory = kmalloc(sizeof(page_table_t));
-    page_table_t *page_tables = kmalloc(sizeof(page_table_t) * PAGE_TABLE_SIZE);
-
-    memcpy(page_directory, paging_ctx.page_directory, sizeof(page_table_t));
-    memcpy(page_tables, paging_ctx.page_tables, sizeof(page_table_t) * PAGE_TABLE_SIZE);
-
-    return (paging_context_t) {
-        .page_directory = page_directory,
-        .page_tables = page_tables,
-    };
-}
-
 // Load CR3 with the **physical** address of the page directory.
 void
 paging_set_page_directory(uint32_t addr) {

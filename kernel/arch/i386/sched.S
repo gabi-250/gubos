@@ -47,7 +47,7 @@ do_task_switch:
     cmp %ebx, %ecx
     je .Ldone
     # Load the CR3 of the next task
-    mov %ebx, %cr3
+    mov %ecx, %cr3
 .Ldone:
     # Restore the callee-saved registers
     pop %edi
