@@ -1,2 +1,2 @@
 mov $0xdeadbabe, %eax
-jmp .
+int $80

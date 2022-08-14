@@ -30,7 +30,7 @@ typedef struct idt_gate_descriptor {
     // D   - 0 for task gates, or the size of gate (1 = 32 bits, 0 = 16 bits)
     //       for interrupt/trap gates
     // XX  - 10 for task gates, 11 for interrupt/trap gates
-    // K   - trap / interrupt (trap = 0, interrupt = 1)
+    // K   - trap / interrupt (trap = 1, interrupt = 0)
     uint8_t flags;
     uint16_t addr_high;
 } __attribute__((packed)) idt_gate_descriptor_t;
@@ -126,11 +126,13 @@ idt_init() {
                  flags);
 
     init_hardware_interrupts();
-    flags = IDT_INT_GATE_FLAGS | IDT_SEG_PRESENT | IDT_KERNEL_DPL | IDT_32_BIT_GATE_SIZE;
+
+    flags = IDT_INT_GATE_FLAGS | IDT_SEG_PRESENT | IDT_USER_DPL | IDT_32_BIT_GATE_SIZE;
     // The rest are user-defined interrupts
     for (uint16_t i = IDT_RESERVED_INT_COUNT + 2; i < IDT_GATE_DESCRIPTOR_COUNT; ++i) {
         set_idt_gate(i, default_exception_handler, flags);
     }
+
     // Load the IDT register and enable interrupts
     asm volatile("lidt %0\n\t"
                  "sti"
