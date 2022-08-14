@@ -24,18 +24,11 @@ qemu: $(GUBOS)
 	qemu-system-i386 -cdrom $(GUBOS) $(QEMU_FLAGS)
 
 monitor: $(GUBOS)
-	qemu-system-i386 -cdrom $(GUBOS) -monitor stdio
+	qemu-system-i386 -cdrom $(GUBOS) -monitor stdio $(QEMU_FLAGS)
 
 debug: $(GUBOS)
 	qemu-system-i386 -cdrom $(GUBOS) $(QEMU_FLAGS) -s -S &> qemu.log &
-	gdb \
-		--eval-command="layout split" \
-		--eval-command="set history save on" \
-		--eval-command="set arch i386" \
-		--eval-command="target remote localhost:1234" \
-		--eval-command="break _start" \
-		--eval-command="break kernel_main" \
-		./build/boot/gubos.kernel
+	gdb ./build/boot/gubos.kernel -x ./scripts/gdb.txt
 fmt:
 	astyle \
 		--break-return-type \

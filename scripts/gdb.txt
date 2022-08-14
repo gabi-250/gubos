@@ -1,0 +1,9 @@
+layout split
+set history save on
+set arch i386
+target remote localhost:1234
+break _start
+break kernel_main
+break init_create_task0
+break paging_create_page_directory
+break init_goto_user_mode
