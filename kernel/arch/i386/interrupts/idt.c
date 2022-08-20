@@ -8,11 +8,14 @@
 #include <portio.h>
 #include <ps2.h>
 #include <sched.h>
+#include <syscall/syscall.h>
+#include <panic.h>
 
 // The number of entries in the interrupt descriptor table
 #define IDT_GATE_DESCRIPTOR_COUNT 256
 
 extern int SCHED_INIT;
+extern void syscall_interrupt_handler(interrupt_state_t *state);
 
 // The IDT can contain 3 kinds of gate descriptors:
 // * task-gate: the same as the task gates used in the GDT/LDT
@@ -44,6 +47,7 @@ __attribute__ ((aligned(8)))
 static idt_gate_descriptor_t idt_descriptors[IDT_GATE_DESCRIPTOR_COUNT];
 static idt_register_t idtr;
 
+static
 __attribute__ ((interrupt)) void
 default_exception_handler(interrupt_state_t *state) {
     PANIC("received interrupt (eflags=%#x, cs=%d, eip=%d)\n",
@@ -52,6 +56,7 @@ default_exception_handler(interrupt_state_t *state) {
           state->eip);
 }
 
+static
 __attribute__ ((interrupt)) void
 timer_irq_handler(interrupt_state_t *) {
     pic_send_eoi(PIC_IRQ0);
@@ -60,6 +65,7 @@ timer_irq_handler(interrupt_state_t *) {
     }
 }
 
+static
 __attribute__ ((interrupt)) void
 keyboard_irq_handler(interrupt_state_t *) {
     ps2_handle_irq1();
@@ -129,10 +135,15 @@ idt_init() {
 
     flags = IDT_INT_GATE_FLAGS | IDT_SEG_PRESENT | IDT_USER_DPL | IDT_32_BIT_GATE_SIZE;
     // The rest are user-defined interrupts
-    for (uint16_t i = IDT_RESERVED_INT_COUNT + 2; i < IDT_GATE_DESCRIPTOR_COUNT; ++i) {
+    for (uint16_t i = IDT_RESERVED_INT_COUNT + 2; i < IDT_SYSCALL_INT; ++i) {
         set_idt_gate(i, default_exception_handler, flags);
     }
 
+    set_idt_gate(IDT_SYSCALL_INT, syscall_interrupt_handler, flags);
+
+    for (uint16_t i = IDT_SYSCALL_INT + 1; i < IDT_GATE_DESCRIPTOR_COUNT; ++i) {
+        set_idt_gate(i, default_exception_handler, flags);
+    }
     // Load the IDT register and enable interrupts
     asm volatile("lidt %0\n\t"
                  "sti"

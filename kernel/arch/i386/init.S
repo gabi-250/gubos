@@ -32,7 +32,7 @@ init_goto_user_mode:
     push $USER_STACK_TOP
     pushf
     # Set the IF flag of EFLAGS to enable interrupts for the userspace task
-    or $FLAGS_INT_ENABLE_FLAG, (%esp)
+    orl $FLAGS_INT_ENABLE_FLAG, (%esp)
     push $(GDT_USER_CODE_SEGMENT | GDT_USER_RPL)
     push %esi
     iret

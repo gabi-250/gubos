@@ -12,5 +12,6 @@
 #define IDT_KERNEL_DPL                     0b00000000
 #define IDT_SEG_PRESENT                    0b10000000
 #define IDT_RESERVED_INT_COUNT             32
+#define IDT_SYSCALL_INT                    80
 
 #endif /* __IDT_H__ */
