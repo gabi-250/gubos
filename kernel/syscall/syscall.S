@@ -20,6 +20,5 @@ syscall_interrupt_handler:
     mov 0x4(%esp), %eax
     cld
     call syscall_handler
-    lea -0xc(%ebp), %esp
-    pop %ebp
+    leave
     iret

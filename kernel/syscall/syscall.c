@@ -1,6 +1,7 @@
 #include <registers.h>
 #include <interrupts/handlers.h>
 #include <syscall/syscall.h>
+#include <syscall/exit.h>
 #include <printk.h>
 #include <panic.h>
 
@@ -19,7 +20,7 @@ syscall_handler(interrupt_state_t *state, registers_t regs) {
 
     switch (syscall_num) {
         case SYS_EXIT:
-            PANIC("handle exit");
+            exit(&regs);
             break;
         default:
             PANIC("unknown syscall %d", syscall_num);

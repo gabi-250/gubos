@@ -12,6 +12,12 @@ panic(const char *file, int line, const char *fmt, ...) {
     va_end(params);
     // XXX: add more debugging info.
     asm volatile("cli");
+    halt();
+}
+
+void
+__attribute__ ((noreturn))
+halt(void) {
     for (;;) {
         asm volatile("hlt");
     }

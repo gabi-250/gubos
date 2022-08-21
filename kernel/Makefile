@@ -34,7 +34,15 @@ $(ARCHDIR)/paging_bootstrap.o\
 $(ARCHDIR)/schedS.o\
 $(ARCHDIR)/initS.o\
 
-KERNEL_OBJS = $(KERNEL_ARCH_OBJS) kernel.o kmalloc.o schedc.o task.o initc.o syscall/syscallS.o syscall/syscallc.o
+KERNEL_OBJS = $(KERNEL_ARCH_OBJS)\
+kernel.o\
+kmalloc.o\
+schedc.o\
+task.o\
+initc.o\
+syscall/syscallS.o\
+syscall/syscallc.o\
+syscall/exit.o\
 
 OBJS =\
 $(ARCHDIR)/crti.o \

@@ -19,7 +19,7 @@ extern void syscall_interrupt_handler(interrupt_state_t *state);
 
 // The IDT can contain 3 kinds of gate descriptors:
 // * task-gate: the same as the task gates used in the GDT/LDT
-// * interrupt-gate
+// * interrupt-gate (disables the IF flag, i.e. interrupts are disabled)
 // * trap-gate
 typedef struct idt_gate_descriptor {
     uint16_t addr_low;

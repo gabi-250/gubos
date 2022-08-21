@@ -67,7 +67,8 @@ task_create(paging_context_t paging_ctx, vmm_context_t vmm_ctx, void (*task_fn)(
         .virtual_addr_space = cr3,
         .esp0 = kernel_stack_top,
         .vmm_context = vmm_ctx,
-        .paging_ctx = task_paging_ctx
+        .paging_ctx = task_paging_ctx,
+        .parent = NULL,
     };
 
     return task;

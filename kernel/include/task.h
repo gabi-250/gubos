@@ -13,6 +13,7 @@ typedef struct task_control_block {
     uint32_t esp0;
     vmm_context_t vmm_context;
     paging_context_t paging_ctx;
+    struct task_control_block_t *parent;
 } task_control_block_t;
 
 typedef enum sched_priority {
