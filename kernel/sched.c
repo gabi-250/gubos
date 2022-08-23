@@ -1,4 +1,5 @@
 #include <task.h>
+#include <init.h>
 #include <sched.h>
 #include <gdt.h>
 #include <flags.h>
@@ -60,8 +61,8 @@ sched_add(task_control_block_t *task, task_priority_t priority) {
 
 void
 sched_remove(uint32_t pid) {
-    if (pid == 0) {
-        PANIC("cannot remove task 0");
+    if (!pid || pid == INIT_PID) {
+        PANIC("cannot remove task (PID=%u)", pid);
     }
 
     struct task_list *task = tasks_tail;
@@ -93,7 +94,6 @@ void
 sched_context_switch() {
     task_control_block_t *task = tasks_sched_head->task;
     tasks_sched_head = tasks_sched_head->next;
-    printk_debug("Running task %u\n", task->pid);
 
     sched_switch_task(task);
 }

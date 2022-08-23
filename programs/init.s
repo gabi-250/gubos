@@ -1,0 +1,2 @@
+mov $dead, %eax
+jmp .

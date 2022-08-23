@@ -69,14 +69,22 @@ multiboot_framebuffer_info(uint32_t multiboot_info) {
     return 0;
 }
 
+static void
+advance_tag(struct multiboot_tag **tag) {
+    *tag = (struct multiboot_tag *)((multiboot_uint8_t *)*tag + (((*tag)->size + 7) & ~7));
+}
+
 struct multiboot_tag_module *
-multiboot_get_first_module(uint32_t multiboot_info) {
-    struct multiboot_tag *tag = (struct multiboot_tag *)(multiboot_info + 8);
-    while (tag->type != MULTIBOOT_TAG_TYPE_END) {
-        if (tag->type == MULTIBOOT_TAG_TYPE_MODULE) {
-            return (struct multiboot_tag_module *)tag;
+multiboot_get_next_module(struct multiboot_tag **tag) {
+    while ((*tag)->type != MULTIBOOT_TAG_TYPE_END) {
+        if ((*tag)->type == MULTIBOOT_TAG_TYPE_MODULE) {
+            struct multiboot_tag_module *module = (struct multiboot_tag_module *)*tag;
+            advance_tag(tag);
+
+            return module;
         }
-        tag = (struct multiboot_tag *)((multiboot_uint8_t *)tag + ((tag->size + 7) & ~7));
+
+        advance_tag(tag);
     }
     return 0;
 }

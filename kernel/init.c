@@ -1,4 +1,6 @@
 #include <init.h>
+#include <task.h>
+#include <panic.h>
 #include <mm/vmm.h>
 #include <mm/addr_space.h>
 #include <mm/paging.h>
@@ -9,10 +11,22 @@ void init_goto_user_mode();
 task_control_block_t *
 init_create_task0(paging_context_t kern_paging_ctx, vmm_context_t kern_vmm_ctx,
                   void *text_physical_addr) {
+    task_control_block_t *task = init_create_user_task(kern_paging_ctx, kern_vmm_ctx,
+                                 text_physical_addr, NULL);
+
+    ASSERT(task->pid == INIT_PID, "invalid PID for init task: %u", task->pid);
+
+    return task;
+}
+
+task_control_block_t *
+init_create_user_task(paging_context_t kern_paging_ctx, vmm_context_t kern_vmm_ctx,
+                      void *text_physical_addr, task_control_block_t *parent) {
     void *user_text_vaddr = vmm_map_pages(&kern_vmm_ctx, 0, (uint32_t)text_physical_addr, 1,
                                           PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE | PAGE_FLAG_USER);
     task_control_block_t *task = task_create(kern_paging_ctx, kern_vmm_ctx, init_goto_user_mode,
                                  user_text_vaddr, true);
+    task->parent = parent;
 
     vmm_context_t vmm_context = vmm_clone_context(kern_vmm_ctx);
 
@@ -24,4 +38,5 @@ init_create_task0(paging_context_t kern_paging_ctx, vmm_context_t kern_vmm_ctx,
     task->vmm_context = vmm_context;
 
     return task;
+
 }

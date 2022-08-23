@@ -8,6 +8,7 @@
 
 # init_goto_user_mode: the top of the stack should contain the userspace address to jump to
 init_goto_user_mode:
+    # Clear the IF flag for now
     cli
     mov $(GDT_USER_DATA_SEGMENT | GDT_USER_RPL), %ax
     mov %ax, %ds

@@ -57,7 +57,7 @@ do_task_switch:
     sti
     ret
 
-#void halt_or_crash();
+# void halt_or_crash();
 halt_or_crash:
     hlt
     # We should never reach this point, because after a task returns it is

@@ -10,15 +10,15 @@ void
 exit(registers_t *regs) {
     uint32_t pid = CURRENT_TASK.task->pid;
 
-    sched_remove(pid);
-
     if (!CURRENT_TASK.task->parent) {
         PANIC("init task exited");
-    } else {
-        // TODO: return from the interrupt into the parent task
-        uint32_t *ret_addr = (uint32_t *)(regs->ebp + sizeof(uint32_t));
-        *ret_addr = (uint32_t)halt; // XXX
     }
+
+    sched_remove(pid);
+
+    // TODO: return from the interrupt into the parent task
+    uint32_t *ret_addr = (uint32_t *)(regs->ebp + sizeof(uint32_t));
+    *ret_addr = (uint32_t)halt;
 
     printk_debug("task %u exited with status %u\n", pid, regs->eax);
 }

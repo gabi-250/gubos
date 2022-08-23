@@ -12,11 +12,13 @@
 #include <mm/addr_space.h>
 #include <kmalloc.h>
 #include <sched.h>
+#include <task.h>
 #include <init.h>
 #include <panic.h>
 
 kernel_meminfo_t KERNEL_MEMINFO;
 multiboot_info_t MULTIBOOT_INFO;
+extern struct task_list CURRENT_TASK;
 
 __attribute__ ((constructor)) void
 __init_kernel() {
@@ -28,25 +30,10 @@ __uninit_kernel() {
 }
 
 static void
-test_task1() {
-    for (int i = 0; i < 10; ++i) {
-        printk_debug("task #1 here\n");
-        asm volatile("hlt");
-    }
-}
-
-static void
-test_task2() {
-    for (int i = 0; i < 5; ++i) {
-        printk_debug("task #2 here\n");
-        asm volatile("hlt");
-    }
-}
-
-static void
-test_task3() {
+test_task() {
+    /*for (int i = 0; i < 10; ++i) {*/
     for (;;) {
-        printk_debug("task #3 here\n");
+        printk_debug("task %u\n", CURRENT_TASK.task->pid);
         asm volatile("hlt");
     }
 }
@@ -94,31 +81,48 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
 
     printk_debug("VMM: OK\n");
 
-    struct multiboot_tag_module *module;
-    if ((module = multiboot_get_first_module(multiboot_info.addr)) == 0) {
-        printk_debug("Missing module\n");
+    struct multiboot_tag *tag = (struct multiboot_tag *)(multiboot_info.addr + 8);
+    struct multiboot_tag_module *init_mod, *user_mod;
+
+    if ((init_mod = multiboot_get_next_module(&tag)) == NULL) {
+        printk_debug("init not found\n");
         return;
     }
 
-    uint32_t module_addr = module->mod_start;
-    printk_debug("module is at %#x\n", module_addr);
+    if ((user_mod = multiboot_get_next_module(&tag)) == NULL) {
+        printk_debug("hello_userspace not found\n");
+        return;
+    }
+
+    uint32_t init_mod_addr = init_mod->mod_start;
+    printk_debug("init_mod is at %#x\n", init_mod_addr);
+    uint32_t user_mod_addr = user_mod->mod_start;
+    printk_debug("user_mod is at %#x\n", user_mod_addr);
 
     /*kmalloc_some_ints();*/
 
     init_sched(paging_ctx, vmm_context);
 
-    task_control_block_t *task1 = task_create(paging_ctx, vmm_context, test_task1, NULL, false);
-    task_control_block_t *task2 = task_create(paging_ctx, vmm_context, test_task2, NULL, false);
-    task_control_block_t *task3 = task_create(paging_ctx, vmm_context, test_task3, NULL, false);
-    sched_add(task1, TASK_PRIORITY_LOW);
-    sched_add(task2, TASK_PRIORITY_LOW);
-    sched_add(task3, TASK_PRIORITY_LOW);
+    task_control_block_t *init_task = init_create_task0(paging_ctx, vmm_context, (void *)init_mod_addr);
 
-    task_control_block_t *init_task = init_create_task0(paging_ctx, vmm_context, (void *)module_addr);
+
+    task_control_block_t *child = init_create_user_task(paging_ctx, vmm_context, (void *)user_mod_addr,
+                                  init_task);
+
+    for (size_t i = 0; i < 3; ++i) {
+        task_control_block_t *task = task_create(paging_ctx,
+                                     vmm_context, test_task, NULL, false);
+
+        sched_add(task, TASK_PRIORITY_LOW);
+    }
+
     sched_add(init_task, TASK_PRIORITY_LOW);
+    sched_add(child, TASK_PRIORITY_LOW);
 
     for (;;) {
+        printk_debug("task %u\n", CURRENT_TASK.task->pid);
         asm volatile("hlt");
     }
+
     PANIC("kernel task returned");
 }
