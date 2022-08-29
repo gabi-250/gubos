@@ -43,6 +43,7 @@ initc.o\
 syscall/syscallS.o\
 syscall/syscallc.o\
 syscall/exit.o\
+syscall/fork.o\
 
 OBJS =\
 $(ARCHDIR)/crti.o \

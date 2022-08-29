@@ -5,7 +5,8 @@
 #include <interrupts/handlers.h>
 
 #define SYS_EXIT 1
+#define SYS_FORK 2
 
-void syscall_handler(interrupt_state_t *, registers_t);
+void syscall_handler(interrupt_state_t *, registers_t *);
 
 #endif /* __SYSCALL_H__ */
