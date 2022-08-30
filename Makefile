@@ -1,7 +1,7 @@
 GUBOS                  := gubos.bin
-PROJECTS               := libk drivers kernel
+PROJECTS               := drivers kernel
 PROGRAMS               := programs
-SYSTEM_HEADER_PROJECTS := libk kernel
+SYSTEM_HEADER_PROJECTS := kernel
 HOST                   := i686-elf
 HOSTARCH               := i386
 SYSROOT                := $(abspath sysroot)

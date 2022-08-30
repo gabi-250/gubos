@@ -5,61 +5,31 @@ ARCHDIR               := arch/$(HOSTARCH)
 KERNEL_ARCH_CFLAGS    := -mgeneral-regs-only
 KERNEL_ARCH_LDFLAGS   :=
 KERNEL_ARCH_LIBS      :=
-LIBS                  := -ldrivers -lk -nostdlib -lgcc
+LIBS                  := -ldrivers -nostdlib -lgcc
 CFLAGS                = $(GUBOSINCLUDE) $(KERNEL_ARCH_CFLAGS) -O0 -g -D__is_kernel -ffreestanding -Wall -Wextra -Werror
 LDFLAGS               =
 
 GUBOSINCLUDE :=\
 -Iinclude\
--I../libk/include\
 -I../drivers/include\
 -I$(ARCHDIR)/include\
 -L=/usr/src/gubos/lib\
 
-KERNEL_ARCH_OBJS :=\
-$(ARCHDIR)/gdtS.o\
-$(ARCHDIR)/gdtc.o\
-$(ARCHDIR)/flags.o\
-$(ARCHDIR)/interrupts/idt.o\
-$(ARCHDIR)/interrupts/page_fault.o\
-$(ARCHDIR)/interrupts/handlers.o\
-$(ARCHDIR)/boot.o\
-$(ARCHDIR)/multiboot2_header.o\
-$(ARCHDIR)/multiboot2.o\
-$(ARCHDIR)/mm/pmm.o\
-$(ARCHDIR)/mm/vmm.o\
-$(ARCHDIR)/mm/paging.o\
-$(ARCHDIR)/mm/addr_space.o\
-$(ARCHDIR)/paging_bootstrap.o\
-$(ARCHDIR)/schedS.o\
-$(ARCHDIR)/initS.o\
+KERNEL_ARCH_SRCS := $(wildcard $(ARCHDIR)/*.c $(ARCHDIR)/*.S $(ARCHDIR)/**/*.c $(ARCHDIR)/**/*.S)
+KERNEL_ARCH_OBJS := $(addsuffix .o, $(basename $(KERNEL_ARCH_SRCS)))
 
-KERNEL_OBJS = $(KERNEL_ARCH_OBJS)\
-kernel.o\
-kmalloc.o\
-schedc.o\
-task.o\
-initc.o\
-syscall/syscallS.o\
-syscall/syscallc.o\
-syscall/exit.o\
-syscall/fork.o\
+KERNEL_SRCS := $(wildcard *.c string/*.c syscall/*.c syscall/*.S)
+KERNEL_OBJS := $(addsuffix .o, $(basename $(KERNEL_SRCS)))
 
 OBJS =\
-$(ARCHDIR)/crti.o \
-$(ARCHDIR)/crtbegin.o \
+$(KERNEL_ARCH_OBJS) \
 $(KERNEL_OBJS) \
-$(ARCHDIR)/crtend.o \
-$(ARCHDIR)/crtn.o \
 
 LINK_LIST=\
 $(LDFLAGS) \
-$(ARCHDIR)/crti.o \
-$(ARCHDIR)/crtbegin.o \
+$(KERNEL_ARCH_OBJS) \
 $(KERNEL_OBJS) \
 $(LIBS) \
-$(ARCHDIR)/crtend.o \
-$(ARCHDIR)/crtn.o \
 
 .PHONY: all clean install install-headers install-kernel
 .SUFFIXES: .o .c .S
@@ -73,34 +43,31 @@ gubos.kernel: $(OBJS) $(ARCHDIR)/linker.ld
 $(ARCHDIR)/crtbegin.o $(ARCHDIR)/crtend.o:
 	OBJ=`$(CC) $(CFLAGS) $(LDFLAGS) -print-file-name=$(@F)` && cp "$$OBJ" $@
 
-$(ARCHDIR)/gdtc.o:
-	$(CC) -MD -c $(ARCHDIR)/gdt.c -o $(ARCHDIR)/gdtc.o -std=gnu11 $(CFLAGS)
-
-$(ARCHDIR)/gdtS.o:
-	$(CC) -MD -c $(ARCHDIR)/gdt.S -o $(ARCHDIR)/gdtS.o -std=gnu11 $(CFLAGS)
-
-schedc.o:
-	$(CC) -MD -c sched.c -o schedc.o -std=gnu11 $(CFLAGS)
-
-$(ARCHDIR)/schedS.o:
-	$(CC) -MD -c $(ARCHDIR)/sched.S -o $(ARCHDIR)/schedS.o -std=gnu11 $(CFLAGS)
-
-initc.o:
-	$(CC) -MD -c init.c -o initc.o -std=gnu11 $(CFLAGS)
-
-$(ARCHDIR)/initS.o:
-	$(CC) -MD -c $(ARCHDIR)/init.S -o $(ARCHDIR)/initS.o -std=gnu11 $(CFLAGS)
-
-syscall/syscallc.o:
-	$(CC) -MD -c syscall/syscall.c -o syscall/syscallc.o -std=gnu11 $(CFLAGS)
-
-syscall/syscallS.o:
-	$(CC) -MD -c syscall/syscall.S -o syscall/syscallS.o -std=gnu11 $(CFLAGS)
-
 %.o: %.c
 	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS)
 
 %.o: %.S
+	$(CC) -MD -c $< -o $@ $(CFLAGS)
+
+string/%.o: string/%.c
+	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS)
+
+$(ARCHDIR)/%.o: $(ARCHDIR)/%.c
+	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS)
+
+$(ARCHDIR)/%.o: $(ARCHDIR)/%.S
+	$(CC) -MD -c $< -o $@ $(CFLAGS)
+
+$(ARCHDIR)/mm/%.o: $(ARCHDIR)/mm/%.c
+	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS)
+
+$(ARCHDIR)/mm/%.o: $(ARCHDIR)/mm/%.S
+	$(CC) -MD -c $< -o $@ $(CFLAGS)
+
+$(ARCHDIR)/interrupts/%.o: $(ARCHDIR)/interrupts/%.c
+	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS)
+
+$(ARCHDIR)/interrupts/%.o: $(ARCHDIR)/interrupts/%.S
 	$(CC) -MD -c $< -o $@ $(CFLAGS)
 
 clean:

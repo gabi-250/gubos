@@ -105,7 +105,6 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
 
     task_control_block_t *init_task = init_create_task0(paging_ctx, vmm_context, (void *)init_mod_addr);
 
-
     task_control_block_t *child = init_create_user_task(paging_ctx, vmm_context, (void *)user_mod_addr,
                                   init_task);
 

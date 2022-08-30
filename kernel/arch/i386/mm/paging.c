@@ -40,9 +40,9 @@ paging_create_page_directory(page_table_t *page_directory, page_table_t *page_ta
         .page_tables = page_tables,
     };
 
-    memset(page_directory->entries, sizeof(page_directory->entries), 0);
+    memset(page_directory->entries, 0, sizeof(page_directory->entries));
     for (size_t i = 0; i < PAGE_TABLE_SIZE; ++i) {
-        memset(page_tables[i].entries, sizeof(page_tables[i].entries), 0);
+        memset(page_tables[i].entries, 0, sizeof(page_tables[i].entries));
     }
 
     uint32_t higher_half_base = KERNEL_MEMINFO.higher_half_base;

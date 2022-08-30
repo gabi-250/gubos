@@ -11,7 +11,7 @@
 
 // ((1 << 32) / (1 << 12))
 // NOTE: each bit represents one 4KB page.
-#define MEM_BITMAP_SIZE (1 << 7)
+#define MEM_BITMAP_SIZE (1 << 20)
 #define BITMAP_ENTRY_MASK UINT8_MAX
 
 extern kernel_meminfo_t KERNEL_MEMINFO;
@@ -49,15 +49,15 @@ pmm_init(multiboot_info_t multiboot_info) {
     pmm_mark_range_used(heap_start, heap_end);
 
     // Mark any unavailable memory regions as used:
-    struct multiboot_tag *tag = (struct multiboot_tag *) (multiboot_info.addr + 8);
+    struct multiboot_tag *tag = (struct multiboot_tag *)(multiboot_info.addr + 8);
     while (tag->type != MULTIBOOT_TAG_TYPE_END && tag->type != MULTIBOOT_TAG_TYPE_MMAP) {
-        tag = (struct multiboot_tag *)((multiboot_uint8_t *) tag + ((tag->size + 7) & ~7));
+        tag = (struct multiboot_tag *)((multiboot_uint8_t *)tag + ((tag->size + 7) & ~7));
     }
 
     ASSERT(tag-> type != MULTIBOOT_TAG_TYPE_END, "failed to read memory map");
 
-    multiboot_memory_map_t *mmap = ((struct multiboot_tag_mmap *) tag)->entries;
-    while ((multiboot_uint8_t *) mmap < (multiboot_uint8_t *) tag + tag->size) {
+    multiboot_memory_map_t *mmap = ((struct multiboot_tag_mmap *)tag)->entries;
+    while ((multiboot_uint8_t *) mmap < (multiboot_uint8_t *)tag + tag->size) {
         switch (mmap->type) {
             case MULTIBOOT_MEMORY_AVAILABLE:
                 break;

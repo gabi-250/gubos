@@ -1,10 +1,10 @@
 PREFIX                := /usr/src/gubos
 INCLUDEDIR            := $(PREFIX)/include
 LIBDIR                := $(PREFIX)/lib
-LDFLAGS               := -lk
+LDFLAGS               :=
 GUBOSINCLUDE          :=\
 -Iinclude\
--I../libk/include\
+-I../kernel/include\
 
 CFLAGS               := -O2 -g -ffreestanding -Wall -Wextra -Werror $(GUBOSINCLUDE)
 LIBDRIVERS_CFLAGS    := $(CFLAGS)

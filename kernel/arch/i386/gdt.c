@@ -22,7 +22,7 @@ task_state_segment_t tss;
 
 static void
 tss_init() {
-    memset(&tss, sizeof(tss), 0);
+    memset(&tss, 0, sizeof(tss));
     tss.ss0 = GDT_KERNEL_DATA_SEGMENT;
     tss.esp0 = KERNEL_MEMINFO.stack_top; // TODO pick a stack address
     // XXX what about io_map_base_address?
