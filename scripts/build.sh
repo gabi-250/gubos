@@ -10,7 +10,7 @@ cp programs/* grub/modules
 mkdir -p build/boot/grub
 
 mkdir -p "$SYSROOT"
-cp $SYSROOT/boot/gubos.kernel build/boot/gubos.kernel
+cp $SYSROOT/boot/memo.kernel build/boot/memo.kernel
 cp grub/grub.cfg build/boot/grub/grub.cfg
 cp -r grub/modules build/boot/grub/modules
-grub-mkrescue -o gubos.bin build
+grub-mkrescue -o memo.bin build

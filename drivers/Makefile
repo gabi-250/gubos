@@ -1,12 +1,12 @@
-PREFIX                := /usr/src/gubos
+PREFIX                := /usr/src/memo
 INCLUDEDIR            := $(PREFIX)/include
 LIBDIR                := $(PREFIX)/lib
 LDFLAGS               :=
-GUBOSINCLUDE          :=\
+MEMOINCLUDE          :=\
 -Iinclude\
 -I../kernel/include\
 
-CFLAGS               := -O2 -g -ffreestanding -Wall -Wextra -Werror $(GUBOSINCLUDE)
+CFLAGS               := -O2 -g -ffreestanding -Wall -Wextra -Werror $(MEMOINCLUDE)
 LIBDRIVERS_CFLAGS    := $(CFLAGS)
 OBJS                 := pic.o ps2.o
 LIBDRIVERS_OBJS      := $(OBJS:.o=.libdrivers.o)

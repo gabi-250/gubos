@@ -1,7 +1,7 @@
 # Runnable programs
 
 This directory contains the programs we'll ask GRUB to load into memory. This
-enables `gubos` to access and "run" programs without having to implement a file
+enables `memo` to access and "run" programs without having to implement a file
 system.
 
 For each new `<program.s>`, you will need to add a new `module2` command to

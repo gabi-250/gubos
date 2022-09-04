@@ -6,14 +6,14 @@ KERNEL_ARCH_CFLAGS    := -mgeneral-regs-only
 KERNEL_ARCH_LDFLAGS   :=
 KERNEL_ARCH_LIBS      :=
 LIBS                  := -ldrivers -nostdlib -lgcc
-CFLAGS                = $(GUBOSINCLUDE) $(KERNEL_ARCH_CFLAGS) -O0 -g -D__is_kernel -ffreestanding -Wall -Wextra -Werror
+CFLAGS                = $(MEMOINCLUDE) $(KERNEL_ARCH_CFLAGS) -O0 -g -D__is_kernel -ffreestanding -Wall -Wextra -Werror
 LDFLAGS               =
 
-GUBOSINCLUDE :=\
+MEMOINCLUDE :=\
 -Iinclude\
 -I../drivers/include\
 -I$(ARCHDIR)/include\
--L=/usr/src/gubos/lib\
+-L=/usr/src/memo/lib\
 
 KERNEL_ARCH_SRCS := $(wildcard $(ARCHDIR)/*.c $(ARCHDIR)/*.S $(ARCHDIR)/**/*.c $(ARCHDIR)/**/*.S)
 KERNEL_ARCH_OBJS := $(addsuffix .o, $(basename $(KERNEL_ARCH_SRCS)))
@@ -34,11 +34,11 @@ $(LIBS) \
 .PHONY: all clean install install-headers install-kernel
 .SUFFIXES: .o .c .S
 
-all: gubos.kernel
+all: memo.kernel
 
-gubos.kernel: $(OBJS) $(ARCHDIR)/linker.ld
+memo.kernel: $(OBJS) $(ARCHDIR)/linker.ld
 	$(CC) -T $(ARCHDIR)/linker.ld -o $@ $(CFLAGS) $(LINK_LIST)
-	grub-file --is-x86-multiboot2 gubos.kernel
+	grub-file --is-x86-multiboot2 memo.kernel
 
 $(ARCHDIR)/crtbegin.o $(ARCHDIR)/crtend.o:
 	OBJ=`$(CC) $(CFLAGS) $(LDFLAGS) -print-file-name=$(@F)` && cp "$$OBJ" $@
@@ -71,7 +71,7 @@ $(ARCHDIR)/interrupts/%.o: $(ARCHDIR)/interrupts/%.S
 	$(CC) -MD -c $< -o $@ $(CFLAGS)
 
 clean:
-	rm -f gubos.kernel
+	rm -f memo.kernel
 	rm -f $(OBJS) *.o */*.o */*/*.o
 	rm -f $(OBJS:.o=.d) *.d */*.d */*/*.d
 
@@ -81,6 +81,6 @@ install-headers:
 	mkdir -p $(SYSROOT)$(INCLUDEDIR)
 	cp -R include/. $(SYSROOT)$(INCLUDEDIR)/
 
-install-kernel: gubos.kernel
+install-kernel: memo.kernel
 	mkdir -p $(SYSROOT)$(BOOTDIR)
-	cp gubos.kernel $(SYSROOT)$(BOOTDIR)
+	cp memo.kernel $(SYSROOT)$(BOOTDIR)

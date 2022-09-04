@@ -1,4 +1,4 @@
-GUBOS                  := gubos.bin
+MEMO                   := memo.bin
 PROJECTS               := drivers kernel
 PROGRAMS               := programs
 SYSTEM_HEADER_PROJECTS := kernel
@@ -17,18 +17,18 @@ QEMU_FLAGS             := -d int,cpu_reset --no-reboot --no-shutdown
 
 .PHONY: qemu monitor debug clean fmt $(PROJECTS) $(PROGRAMS)
 
-$(GUBOS): $(PROJECTS) $(PROGRAMS)
+$(MEMO): $(PROJECTS) $(PROGRAMS)
 	./scripts/build.sh
 
-qemu: $(GUBOS)
-	qemu-system-i386 -cdrom $(GUBOS) $(QEMU_FLAGS)
+qemu: $(MEMO)
+	qemu-system-i386 -cdrom $(MEMO) $(QEMU_FLAGS)
 
-monitor: $(GUBOS)
-	qemu-system-i386 -cdrom $(GUBOS) -monitor stdio $(QEMU_FLAGS)
+monitor: $(MEMO)
+	qemu-system-i386 -cdrom $(MEMO) -monitor stdio $(QEMU_FLAGS)
 
-debug: $(GUBOS)
-	qemu-system-i386 -cdrom $(GUBOS) $(QEMU_FLAGS) -s -S &> qemu.log &
-	gdb ./build/boot/gubos.kernel -x ./scripts/gdb.txt
+debug: $(MEMO)
+	qemu-system-i386 -cdrom $(MEMO) $(QEMU_FLAGS) -s -S &> qemu.log &
+	gdb ./build/boot/memo.kernel -x ./scripts/gdb.txt
 fmt:
 	astyle \
 		--break-return-type \
@@ -53,4 +53,4 @@ ifeq ($(MAKECMDGOALS), clean)
 endif
 
 clean: $(PROJECTS) $(PROGRAMS)
-	rm -rf sysroot build $(GUBOS) qemu.log
+	rm -rf sysroot build $(MEMO) qemu.log
