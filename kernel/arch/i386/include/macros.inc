@@ -1,0 +1,20 @@
+.macro PUSH_KERN_MEMINFO
+    push $__kernel_stack_top
+    push $__higher_half
+    push $__kernel_bss_virtual_end
+    push $__kernel_bss_physical_start
+    push $__kernel_bss_virtual_start
+    push $__kernel_data_virtual_end
+    push $__kernel_data_physical_start
+    push $__kernel_data_virtual_start
+    push $__kernel_rodata_virtual_end
+    push $__kernel_rodata_physical_start
+    push $__kernel_rodata_virtual_start
+    push $__kernel_text_virtual_end
+    push $__kernel_text_physical_start
+    push $__kernel_text_virtual_start
+    push $__kernel_virtual_end
+    push $__kernel_virtual_start
+    push $__kernel_physical_end
+    push $__kernel_physical_start
+.endm

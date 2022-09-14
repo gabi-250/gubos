@@ -59,6 +59,8 @@ SECTIONS
 
     .text ALIGN(4K): AT(ADDR(.text) - __kernel_addr_space_delta)
     {
+	__kernel_text_virtual_start = .;
+	__kernel_text_physical_start = ADDR(.text);
 	*(.text)
     }
 
@@ -68,19 +70,34 @@ SECTIONS
 
     .rodata ALIGN(4K): AT(ADDR(.rodata) - __kernel_addr_space_delta)
     {
+	__kernel_text_virtual_end = .;
+
+	__kernel_rodata_virtual_start = .;
+	__kernel_rodata_physical_start = ADDR(.rodata);
 	*(.rodata)
     }
 
     .data ALIGN(4K): AT(ADDR(.data) - __kernel_addr_space_delta)
     {
+	__kernel_rodata_virtual_end = .;
+
+	__kernel_data_virtual_start = .;
+	__kernel_data_physical_start = ADDR(.data);
 	*(.data)
     }
 
     .bss ALIGN(4K): AT(ADDR(.bss) - __kernel_addr_space_delta)
     {
+	__kernel_data_virtual_end = .;
+
+	__kernel_bss_virtual_start = .;
+	__kernel_bss_physical_start = ADDR(.bss);
 	*(COMMON)
 	*(.bss)
     }
+
+    . = ALIGN(4K);
+    __kernel_bss_virtual_end = .;
 
     /* Align the end of the kernel virtual address space to make it easily
      * mappable using 4MB pages */

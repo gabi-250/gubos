@@ -10,10 +10,12 @@
 #include <mm/meminfo.h>
 #include <mm/addr_space.h>
 
+#define ADDR_SPACE_ENTRIES 6
+
 extern kernel_meminfo_t KERNEL_MEMINFO;
 extern multiboot_info_t MULTIBOOT_INFO;
 
-static addr_space_entry_t ADDR_SPACE[3];
+static addr_space_entry_t ADDR_SPACE[ADDR_SPACE_ENTRIES];
 
 static void add_allocation(vmm_context_t *vmm_context, uint32_t virtual_addr,
                            uint32_t physical_addr, uint32_t page_count, uint32_t flags);
@@ -22,29 +24,57 @@ static void remove_allocation(vmm_context_t *vmm_context,
 static void add_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
                             uint32_t page_count);
 static uint32_t remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
-                                   uint32_t page_count);
+                                   uint32_t page_count, bool userspace);
 static vmm_context_t create_empty_ctx();
 
 vmm_context_t
 vmm_init() {
-    // Kernel text, rodata, data
+    // Kernel text
     ADDR_SPACE[0] = (addr_space_entry_t) {
-        .virtual_start = KERNEL_MEMINFO.virtual_start,
-        .physical_start = KERNEL_MEMINFO.physical_start,
-        .page_count = (KERNEL_MEMINFO.virtual_end - KERNEL_MEMINFO.virtual_start) / PAGE_SIZE,
+        .virtual_start = KERNEL_MEMINFO.text_virtual_start,
+        .physical_start = KERNEL_MEMINFO.text_physical_start,
+        .page_count = (KERNEL_MEMINFO.text_virtual_end - KERNEL_MEMINFO.text_virtual_start) / PAGE_SIZE,
+        .flags = PAGE_FLAG_PRESENT
+    };
+
+    // Kernel rodata
+    ADDR_SPACE[1] = (addr_space_entry_t) {
+        .virtual_start = KERNEL_MEMINFO.rodata_virtual_start,
+        .physical_start = KERNEL_MEMINFO.rodata_physical_start,
+        .page_count = (KERNEL_MEMINFO.rodata_virtual_end - KERNEL_MEMINFO.rodata_virtual_start) / PAGE_SIZE,
+        .flags = PAGE_FLAG_PRESENT
+    };
+
+    // Kernel data
+    ADDR_SPACE[2] = (addr_space_entry_t) {
+        .virtual_start = KERNEL_MEMINFO.data_virtual_start,
+        .physical_start = KERNEL_MEMINFO.data_physical_start,
+        .page_count = (KERNEL_MEMINFO.data_virtual_end - KERNEL_MEMINFO.data_virtual_start) / PAGE_SIZE,
         .flags = PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE
     };
+
+    // Kernel bss
+    //
+    // TODO: make the `.bss` pages copy-on-write
+    ADDR_SPACE[3] = (addr_space_entry_t) {
+        .virtual_start = KERNEL_MEMINFO.bss_virtual_start,
+        .physical_start = KERNEL_MEMINFO.bss_physical_start,
+        .page_count = (KERNEL_MEMINFO.bss_virtual_end - KERNEL_MEMINFO.bss_virtual_start) / PAGE_SIZE,
+        .flags = PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE
+    };
+
     // Kernel heap
-    ADDR_SPACE[1] = (addr_space_entry_t) {
+    ADDR_SPACE[4] = (addr_space_entry_t) {
         .virtual_start = KERNEL_HEAP_VIRT_START,
         .physical_start = KERNEL_HEAP_PHYS_START,
         .page_count = KERNEL_HEAP_SIZE / PAGE_SIZE,
         .flags = PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE
     };
+
     // Framebuffer
     struct multiboot_tag_framebuffer_common *framebuffer_info =
         multiboot_framebuffer_info(MULTIBOOT_INFO.addr);
-    ADDR_SPACE[2] = (addr_space_entry_t) {
+    ADDR_SPACE[5] = (addr_space_entry_t) {
         .virtual_start = KERNEL_MEMINFO.higher_half_base,
         .physical_start = framebuffer_info->framebuffer_addr,
         .page_count = 1,

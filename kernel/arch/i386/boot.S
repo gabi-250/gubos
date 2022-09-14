@@ -7,12 +7,16 @@ __kernel_stack_bottom:
 __kernel_stack_top:
 
 .section .data.boot, "awx"
+.extern kernel_meminfo_size
+
 # A temporary GDT to replace the one set up by GRUB (only needed until paging is
 # enabled, because once we have paging, the GDT setup can more easily be handled in
 # C land).
 .include "./arch/i386/include/gdt.inc"
 # The boot page tables
 .include "./arch/i386/include/page_directory.inc"
+# Some helper macros
+.include "./arch/i386/include/macros.inc"
 
 .section .text.boot, "awx"
 
@@ -55,14 +59,12 @@ _enable_paging:
     mov %cr0, %eax
     or $0x80000000, %eax
     mov %eax, %cr0
-    push $__kernel_stack_top
-    push $__higher_half
-    push $__kernel_virtual_end
-    push $__kernel_virtual_start
-    push $__kernel_physical_end
-    push $__kernel_physical_start
+    PUSH_KERN_MEMINFO
     call paging_bootstrap
-    add $24, %esp
+    # Save the address of the PD returned by paging_bootstrap
+    mov %eax, %ebx
+    call kernel_meminfo_size
+    add %eax, %esp
     # Update EIP to point to a higher-half address from now on.
     jmp _higher_half
 
@@ -74,19 +76,14 @@ _higher_half:
     mov $__kernel_stack_top, %esp
     sub $8, %esp
     # Move the address of the "real" paging directory into CR3
-    mov %eax, %cr3
+    mov %ebx, %cr3
     # Set up the IDT and enable interrupts
     call idt_init
     # Now that we've enabled paging, call some C code to sets up the real GDT
     call gdt_init
     # Call the global constructors
     call _init
-    push $__kernel_stack_top
-    push $__higher_half
-    push $__kernel_virtual_end
-    push $__kernel_virtual_start
-    push $__kernel_physical_end
-    push $__kernel_physical_start
+    PUSH_KERN_MEMINFO
     call kernel_main
     # Call the global destructors
     call _fini
