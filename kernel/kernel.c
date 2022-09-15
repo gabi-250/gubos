@@ -102,6 +102,7 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     /*kmalloc_some_ints();*/
 
     init_sched(paging_ctx, vmm_context);
+    printk_debug("scheduler init: OK\n");
 
     task_control_block_t *init_task = init_create_task0(paging_ctx, vmm_context, (void *)init_mod_addr);
 

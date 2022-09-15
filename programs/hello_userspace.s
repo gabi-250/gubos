@@ -1,3 +1,6 @@
+.globl _start
+
+_start:
 # fork
 mov $2, %eax
 int $80

@@ -6,10 +6,10 @@ OBJS = $(SRC:.s=.bin)
 all: $(OBJS)
 
 %.o: %.s
-	$(CC) -MD -c $< -o $@
+	$(AS) $< -o $@
 
 %.bin: %.o
-	objcopy -O binary -j .text $< $@
+	$(LD) $< -o $@
 
 clean:
 	rm -f $(OBJS)
