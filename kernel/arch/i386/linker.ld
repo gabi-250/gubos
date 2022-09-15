@@ -96,12 +96,10 @@ SECTIONS
 	*(.bss)
     }
 
-    . = ALIGN(4K);
-    __kernel_bss_virtual_end = .;
-
     /* Align the end of the kernel virtual address space to make it easily
      * mappable using 4MB pages */
     . = ALIGN(4M);
+    __kernel_bss_virtual_end = .;
     __kernel_virtual_end = .;
     __kernel_physical_end = . - __kernel_addr_space_delta;
 }

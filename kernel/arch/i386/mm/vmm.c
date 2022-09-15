@@ -24,7 +24,7 @@ static void remove_allocation(vmm_context_t *vmm_context,
 static void add_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
                             uint32_t page_count);
 static uint32_t remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
-                                   uint32_t page_count, bool userspace);
+                                   uint32_t page_count, bool is_userspace);
 static vmm_context_t create_empty_ctx();
 
 vmm_context_t
@@ -89,8 +89,11 @@ vmm_new_context() {
     vmm_context_t vmm_context = create_empty_ctx();
 
     uint64_t total_page_count = ((uint64_t)1 << 32) / PAGE_SIZE;
-    // Initially let's say the entire address space is available
-    add_free_blocks(&vmm_context, 0, total_page_count);
+    uint64_t user_page_count = KERNEL_MEMINFO.higher_half_base / PAGE_SIZE;
+    uint64_t kernel_page_count = total_page_count - user_page_count;
+    // Separate the userspace addresses from the kernel ones:
+    add_free_blocks(&vmm_context, 0, user_page_count);
+    add_free_blocks(&vmm_context, KERNEL_MEMINFO.higher_half_base, kernel_page_count);
 
     for (size_t i = 0; i < (sizeof(ADDR_SPACE) / sizeof(addr_space_entry_t)); ++i) {
         vmm_map_pages(&vmm_context,
@@ -177,6 +180,8 @@ vmm_clone_context(vmm_context_t orig_vmm_context) {
 void *
 vmm_map_pages(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t physical_addr,
               uint32_t page_count, uint32_t flags) {
+    bool is_userspace = flags & PAGE_FLAG_USER;
+
     // TODO handle flags
     ASSERT(paging_is_aligned(virtual_addr), "cannot map unaligned address: %#x", virtual_addr);
 
@@ -185,7 +190,7 @@ vmm_map_pages(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t physic
         PANIC("Out of memory");
     }
 
-    uint32_t addr = remove_free_blocks(vmm_context, virtual_addr, page_count);
+    uint32_t addr = remove_free_blocks(vmm_context, virtual_addr, page_count, is_userspace);
     add_allocation(vmm_context, addr, physical_addr, page_count, flags);
 
     return (void *)addr;
@@ -251,12 +256,11 @@ vmm_find_allocation(vmm_context_t *vmm_context, uint32_t virtual_addr) {
 paging_context_t
 vmm_clone_paging_context(vmm_context_t *vmm_ctx, paging_context_t paging_ctx) {
     uint32_t physical_addr = (uint32_t)pmm_alloc_page();
-    page_table_t *page_directory = (page_table_t *)vmm_map_pages(vmm_ctx, 0, physical_addr, 1, 0);
-
+    page_table_t *page_directory = (page_table_t *)vmm_map_pages(vmm_ctx, 0, physical_addr, 1,
+                                   PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);
     memcpy(page_directory, paging_ctx.page_directory, sizeof(page_table_t));
 
-    page_directory->entries[PAGE_TABLE_SIZE - 1] = physical_addr | PAGE_FLAG_PRESENT |
-            PAGE_FLAG_WRITE;
+    page_directory->entries[PAGE_TABLE_SIZE - 1] = physical_addr | PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE;
 
     return (paging_context_t) {
         .page_directory = page_directory,
@@ -357,6 +361,22 @@ is_addr_in_range(uint32_t virtual_addr, vmm_free_blocks_t *free_blocks) {
     return virtual_addr >= free_blocks->virtual_addr && virtual_addr < range_end;
 }
 
+static bool
+is_addr_in_user_range(uint32_t virtual_addr, uint32_t page_count) {
+    uint64_t range_end = virtual_addr + (uint64_t)page_count * PAGE_SIZE;
+
+    return range_end < KERNEL_MEMINFO.higher_half_base;
+}
+
+static bool
+is_addr_ok_for_mode(uint32_t virtual_addr, uint32_t page_count, bool is_userspace) {
+    if (is_userspace) {
+        return is_addr_in_user_range(virtual_addr, page_count);
+    } else {
+        return virtual_addr >= KERNEL_MEMINFO.virtual_start;
+    }
+}
+
 static void
 unlink_block(vmm_context_t *vmm_context, vmm_free_blocks_t *free_blocks, vmm_free_blocks_t *prev) {
     if (prev) {
@@ -369,20 +389,25 @@ unlink_block(vmm_context_t *vmm_context, vmm_free_blocks_t *free_blocks, vmm_fre
 
 static uint32_t
 remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
-                   uint32_t page_count) {
-    ASSERT(vmm_context->free_blocks, "no free blocks");
+                   uint32_t page_count, bool is_userspace) {
+    ASSERT(vmm_context->free_blocks, "out of memory (no free blocks)");
 
     vmm_free_blocks_t *free_blocks = vmm_context->free_blocks;
     vmm_free_blocks_t *prev = NULL;
 
     while (free_blocks) {
-        // If the caller requested a _specific_ virtual address, try to find it.
-        if (!virtual_addr || is_addr_in_range(virtual_addr, free_blocks)) {
+        // If the caller didn't request a specific address, check if the current
+        // address is acceptable given the current access ring.
+        bool select_current_addr = !virtual_addr
+                                   && is_addr_ok_for_mode(free_blocks->virtual_addr, page_count, is_userspace);
 
+        // Alternatively, if the caller requested a _specific_ virtual address, try to find it.
+        if (select_current_addr || is_addr_in_range(virtual_addr, free_blocks)) {
             if (free_blocks->page_count >= page_count) {
                 break;
             }
         }
+
         prev = free_blocks;
         free_blocks = free_blocks->next;
     }
@@ -397,39 +422,39 @@ remove_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr,
     } else if (free_blocks->page_count > page_count) {
         // The requested virtual address is `page_offset` pages into the free
         // region.
-        uint32_t page_offset = (virtual_addr - free_blocks->virtual_addr) / PAGE_SIZE;
+        uint32_t page_offset = virtual_addr ? (virtual_addr - free_blocks->virtual_addr) / PAGE_SIZE : 0;
 
-        // Are there enough pages to satisfy the request?
+        // Are there enough free pages to satisfy the request?
         if (page_count > free_blocks->page_count - page_offset) {
             PANIC("out of memory");
+        }
+
+        if (!virtual_addr || virtual_addr == free_blocks->virtual_addr) {
+            uint32_t allocated_addr = free_blocks->virtual_addr;
+            // The allocation is at the very beginning of the free region.
+            free_blocks->virtual_addr += page_count * PAGE_SIZE;
+            free_blocks->page_count -= page_count;
+
+            return allocated_addr;
         } else {
-            if (!virtual_addr || virtual_addr == free_blocks->virtual_addr) {
-                uint32_t allocated_addr = free_blocks->virtual_addr;
-                // The allocation is at the very beginning of the free region.
-                free_blocks->virtual_addr += page_count * PAGE_SIZE;
-                free_blocks->page_count -= page_count;
+            uint32_t new_block_page_offset = page_offset + page_count;
 
-                return allocated_addr;
+            // Is the requested virtual address somewhere in the middle of the
+            // free region rather than at its beginning/end?
+            if (new_block_page_offset < free_blocks->page_count) {
+                vmm_free_blocks_t *new_block = (vmm_free_blocks_t *)kmalloc(sizeof(vmm_free_blocks_t));
+                *new_block = (vmm_free_blocks_t) {
+                    // The remaining free region immediately follows the
+                    // one starting at `virtual_addr`.
+                    .virtual_addr = free_blocks->virtual_addr + new_block_page_offset * PAGE_SIZE,
+                    .page_count = free_blocks->page_count - new_block_page_offset,
+                    .next = free_blocks->next,
+                };
+                free_blocks->next = new_block;
+                free_blocks->page_count = page_offset;
             } else {
-                uint32_t new_block_page_offset = page_offset + page_count;
-
-                // Is the requested virtual address somewhere in the middle of the
-                // free region rather than at its beginning/end?
-                if (new_block_page_offset < free_blocks->page_count) {
-                    vmm_free_blocks_t *new_block = (vmm_free_blocks_t *)kmalloc(sizeof(vmm_free_blocks_t));
-                    *new_block = (vmm_free_blocks_t) {
-                        // The remaining free region immediately follows the
-                        // one starting at `virtual_addr`.
-                        .virtual_addr = free_blocks->virtual_addr + new_block_page_offset * PAGE_SIZE,
-                        .page_count = free_blocks->page_count - new_block_page_offset,
-                        .next = free_blocks->next,
-                    };
-                    free_blocks->next = new_block;
-                    free_blocks->page_count = page_offset;
-                } else {
-                    // ..no, it's at the end of the region:
-                    free_blocks->page_count -= page_count;
-                }
+                // ..no, it's at the end of the region:
+                free_blocks->page_count -= page_count;
             }
         }
     }
@@ -442,6 +467,14 @@ merge_or_insert_free_blocks(vmm_free_blocks_t *free_blocks, uint32_t virtual_add
                             uint32_t page_count) {
     bool blocks_merged = false;
     if (free_blocks) {
+        bool is_userspace_block = is_addr_in_user_range(free_blocks->virtual_addr, free_blocks->page_count);
+        bool is_userspace_addr = is_addr_in_user_range(virtual_addr, page_count);
+
+        // Don't merge the userspace ranges with the kernel ones.
+        if (!(is_userspace_block ^ is_userspace_addr)) {
+            goto done;
+        }
+
         // Merge the existing free blocks with the newly freed block if they
         // form a contiguous block.
         if (free_blocks->virtual_addr + page_count * PAGE_SIZE == virtual_addr) {
@@ -462,14 +495,21 @@ merge_or_insert_free_blocks(vmm_free_blocks_t *free_blocks, uint32_t virtual_add
         }
     }
 
+done:
     if (!blocks_merged) {
         vmm_free_blocks_t *new_block = (vmm_free_blocks_t *)kmalloc(sizeof(vmm_free_blocks_t));
+        vmm_free_blocks_t *next = free_blocks ? free_blocks->next : NULL;
         *new_block = (vmm_free_blocks_t) {
             .virtual_addr = virtual_addr,
             .page_count = page_count,
-            .next = free_blocks->next,
+            .next = next,
         };
-        free_blocks->next = new_block;
+
+        if (free_blocks) {
+            free_blocks->next = new_block;
+        } else {
+            free_blocks = new_block;
+        }
     }
 }
 

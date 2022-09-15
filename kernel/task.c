@@ -50,6 +50,7 @@ task_create(paging_context_t paging_ctx, vmm_context_t vmm_ctx, void (*task_fn)(
 
     uint32_t cr3 = 0;
 
+    // TODO: both cases should be handled by vmm_find_allocation.
     if (is_userspace) {
         vmm_allocation_t alloc = vmm_find_allocation(&vmm_ctx, (uint32_t)task_paging_ctx.page_directory);
 

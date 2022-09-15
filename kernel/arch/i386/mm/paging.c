@@ -3,7 +3,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <printk.h>
 #include <panic.h>
 #include <kmalloc.h>
 
@@ -17,20 +16,7 @@ page_table_t INIT_KERNEL_PAGE_TABLES[PAGE_TABLE_SIZE];
 page_table_t INIT_ACTIVE_PAGE_DIRECTORY;
 paging_context_t ACTIVE_PAGING_CTX;
 
-paging_context_t
-init_paging() {
-    paging_context_t paging_ctx = paging_create_page_directory(&INIT_ACTIVE_PAGE_DIRECTORY,
-                                  INIT_KERNEL_PAGE_TABLES);
-
-    uint32_t cr3 = vmm_virtual_to_physical((uint32_t)paging_ctx.page_directory);
-    paging_set_page_directory(cr3);
-
-    ACTIVE_PAGING_CTX = paging_ctx;
-
-    return paging_ctx;
-}
-
-paging_context_t
+static paging_context_t
 paging_create_page_directory(page_table_t *page_directory, page_table_t *page_tables) {
     ASSERT(page_directory, "page_directory should not be NULL");
     ASSERT(page_tables, "page_tables should not be NULL");
@@ -50,7 +36,6 @@ paging_create_page_directory(page_table_t *page_directory, page_table_t *page_ta
     for (uint64_t i = 0; higher_half_base + i * PAGE_SIZE < virtual_end; ++i) {
         uint32_t virtual_addr = higher_half_base + i * PAGE_SIZE;
         uint32_t physical_addr = i * PAGE_SIZE;
-
 
         paging_map_virtual_to_physical(paging_ctx, virtual_addr, physical_addr,
                                        PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);
@@ -76,6 +61,19 @@ paging_create_page_directory(page_table_t *page_directory, page_table_t *page_ta
     // PMM does not yet have a virtual mapping (so it can't be written to).
     page_directory->entries[PAGE_TABLE_SIZE - 1] = cr3 | PAGE_FLAG_PRESENT |
             PAGE_FLAG_WRITE;
+
+    return paging_ctx;
+}
+
+paging_context_t
+init_paging() {
+    paging_context_t paging_ctx = paging_create_page_directory(&INIT_ACTIVE_PAGE_DIRECTORY,
+                                  INIT_KERNEL_PAGE_TABLES);
+
+    uint32_t cr3 = vmm_virtual_to_physical((uint32_t)paging_ctx.page_directory);
+    paging_set_page_directory(cr3);
+
+    ACTIVE_PAGING_CTX = paging_ctx;
 
     return paging_ctx;
 }

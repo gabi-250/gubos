@@ -53,9 +53,6 @@ typedef struct paging_context {
 
 
 paging_context_t init_paging();
-paging_context_t paging_create_page_directory(page_table_t *page_directory,
-        page_table_t *page_tables);
-
 void paging_set_page_directory(uint32_t);
 
 // The format of a page directory entry (with 4KB pages) is:
