@@ -33,7 +33,8 @@ vmm_init() {
     ADDR_SPACE[0] = (addr_space_entry_t) {
         .virtual_start = KERNEL_MEMINFO.text_virtual_start,
         .physical_start = KERNEL_MEMINFO.text_physical_start,
-        .page_count = (KERNEL_MEMINFO.text_virtual_end - KERNEL_MEMINFO.text_virtual_start) / PAGE_SIZE,
+        .page_count = paging_page_count(KERNEL_MEMINFO.text_virtual_end -
+                                        KERNEL_MEMINFO.text_virtual_start),
         .flags = PAGE_FLAG_PRESENT
     };
 
@@ -41,7 +42,8 @@ vmm_init() {
     ADDR_SPACE[1] = (addr_space_entry_t) {
         .virtual_start = KERNEL_MEMINFO.rodata_virtual_start,
         .physical_start = KERNEL_MEMINFO.rodata_physical_start,
-        .page_count = (KERNEL_MEMINFO.rodata_virtual_end - KERNEL_MEMINFO.rodata_virtual_start) / PAGE_SIZE,
+        .page_count = paging_page_count(KERNEL_MEMINFO.rodata_virtual_end -
+                                        KERNEL_MEMINFO.rodata_virtual_start),
         .flags = PAGE_FLAG_PRESENT
     };
 
@@ -49,7 +51,8 @@ vmm_init() {
     ADDR_SPACE[2] = (addr_space_entry_t) {
         .virtual_start = KERNEL_MEMINFO.data_virtual_start,
         .physical_start = KERNEL_MEMINFO.data_physical_start,
-        .page_count = (KERNEL_MEMINFO.data_virtual_end - KERNEL_MEMINFO.data_virtual_start) / PAGE_SIZE,
+        .page_count = paging_page_count(KERNEL_MEMINFO.data_virtual_end -
+                                        KERNEL_MEMINFO.data_virtual_start),
         .flags = PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE
     };
 
@@ -59,7 +62,7 @@ vmm_init() {
     ADDR_SPACE[3] = (addr_space_entry_t) {
         .virtual_start = KERNEL_MEMINFO.bss_virtual_start,
         .physical_start = KERNEL_MEMINFO.bss_physical_start,
-        .page_count = (KERNEL_MEMINFO.bss_virtual_end - KERNEL_MEMINFO.bss_virtual_start) / PAGE_SIZE,
+        .page_count = paging_page_count(KERNEL_MEMINFO.bss_virtual_end - KERNEL_MEMINFO.bss_virtual_start),
         .flags = PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE
     };
 
@@ -67,7 +70,7 @@ vmm_init() {
     ADDR_SPACE[4] = (addr_space_entry_t) {
         .virtual_start = KERNEL_HEAP_VIRT_START,
         .physical_start = KERNEL_HEAP_PHYS_START,
-        .page_count = KERNEL_HEAP_SIZE / PAGE_SIZE,
+        .page_count = paging_page_count(KERNEL_HEAP_SIZE),
         .flags = PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE
     };
 
@@ -184,6 +187,7 @@ vmm_map_pages(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t physic
 
     // TODO handle flags
     ASSERT(paging_is_aligned(virtual_addr), "cannot map unaligned address: %#x", virtual_addr);
+    ASSERT(paging_is_aligned(physical_addr), "cannot map to unaligned address: %#x", physical_addr);
 
     if (!vmm_context->free_blocks) {
         // XXX handle this more gracefully
@@ -198,8 +202,7 @@ vmm_map_pages(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t physic
 
 void
 vmm_unmap_pages(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t page_count) {
-    ASSERT(paging_is_aligned(virtual_addr),
-           "cannot unmap unaligned address: %#x", virtual_addr);
+    ASSERT(paging_is_aligned(virtual_addr), "cannot unmap unaligned address: %#x", virtual_addr);
 
     // Update vmm_context->free_blocks
     add_free_blocks(vmm_context, virtual_addr, page_count);
@@ -518,7 +521,7 @@ add_free_blocks(vmm_context_t *vmm_context, uint32_t virtual_addr, uint32_t page
     vmm_free_blocks_t *free_blocks = vmm_context->free_blocks;
     vmm_free_blocks_t *prev = NULL;
 
-    while (free_blocks && virtual_addr < free_blocks->virtual_addr) {
+    while (free_blocks && virtual_addr > free_blocks->virtual_addr) {
         prev = free_blocks;
         free_blocks = free_blocks->next;
     }

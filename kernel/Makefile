@@ -18,7 +18,7 @@ MEMOINCLUDE :=\
 KERNEL_ARCH_SRCS := $(wildcard $(ARCHDIR)/*.c $(ARCHDIR)/*.S $(ARCHDIR)/**/*.c $(ARCHDIR)/**/*.S)
 KERNEL_ARCH_OBJS := $(addsuffix .o, $(basename $(KERNEL_ARCH_SRCS)))
 
-KERNEL_SRCS := $(wildcard *.c string/*.c syscall/*.c syscall/*.S)
+KERNEL_SRCS := $(wildcard *.c string/*.c syscall/*.c syscall/*.S elf/*.c)
 KERNEL_OBJS := $(addsuffix .o, $(basename $(KERNEL_SRCS)))
 
 OBJS =\

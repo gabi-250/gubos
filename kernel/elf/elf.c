@@ -1,4 +1,4 @@
-#include <elf.h>
+#include <elf/elf.h>
 #include <string.h>
 
 int

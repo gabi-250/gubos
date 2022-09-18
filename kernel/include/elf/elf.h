@@ -48,6 +48,8 @@
 
 // Program headers
 
+// An ignored entry.
+#define ELF_PROG_HDR_TYPE_NULL 0
 // A loadable segment
 #define ELF_PROG_HDR_TYPE_LOAD 1
 

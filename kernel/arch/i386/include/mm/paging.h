@@ -69,9 +69,15 @@ void paging_map_virtual_to_physical(paging_context_t, uint32_t, uint32_t, uint32
 // Check whether the specified address is page-aligned.
 bool paging_is_aligned(uint32_t);
 
+// Return the page the specified address belongs to.
+uint32_t paging_align_addr(uint32_t addr);
+
 // Invalidate the TLB entries of the page that corresponds to the specified
 // address.
-void invlpg(uint32_t addr);
+void paging_invlpg(uint32_t addr);
+
+/// Calculate how many pages are required for an allocation of `size` bytes.
+uint32_t paging_page_count(uint32_t size);
 #endif
 
 #endif /* __PAGING_H__ */

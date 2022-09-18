@@ -100,12 +100,22 @@ paging_map_virtual_to_physical(paging_context_t paging_ctx, uint32_t virtual_add
         page_start_addr | flags;
 }
 
+inline uint32_t
+paging_page_count(uint32_t size) {
+    return (size + PAGE_SIZE - 1) / PAGE_SIZE;
+}
+
 inline bool
 paging_is_aligned(uint32_t addr) {
     return !((addr) & (PAGE_SIZE - 1));
 }
 
+inline uint32_t
+paging_align_addr(uint32_t addr) {
+    return (addr / PAGE_SIZE) * PAGE_SIZE;
+}
+
 inline void
-invlpg(uint32_t addr) {
+paging_invlpg(uint32_t addr) {
     asm volatile("invlpg (%0)" ::"r" (addr) : "memory");
 }
