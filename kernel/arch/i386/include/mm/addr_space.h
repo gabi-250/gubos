@@ -9,7 +9,6 @@
 #define USER_STACK_PAGE_COUNT   10
 #define USER_STACK_SIZE         USER_STACK_PAGE_COUNT * PAGE_SIZE
 
-
 #ifndef __ASSEMBLY__
 #include <mm/vmm.h>
 

@@ -19,7 +19,8 @@ elf_flags_to_paging_flags(uint32_t flags) {
 }
 
 static void
-handle_loadable_segment(vmm_context_t *kern_vmm_context, vmm_context_t *vmm_context,
+handle_loadable_segment(paging_context_t kern_paging_ctx, vmm_context_t *kern_vmm_ctx,
+                        vmm_context_t *vmm_ctx,
                         elf32_prog_hdr_t *prog_hdr, void *raw_elf) {
     size_t size = prog_hdr->filesz > prog_hdr->memsz ? prog_hdr->filesz : prog_hdr->memsz;
     size_t file_size = prog_hdr->filesz;
@@ -33,13 +34,15 @@ handle_loadable_segment(vmm_context_t *kern_vmm_context, vmm_context_t *vmm_cont
         uint32_t flags = PAGE_FLAG_PRESENT | PAGE_FLAG_USER | elf_flags_to_paging_flags(prog_hdr->flags);
         // Map the virtual address so we can memcpy the data from the ELF file
         // into the newly allocated page.
-        vmm_map_pages(kern_vmm_context, aligned_vaddr, physical_addr, 1, flags);
+        vmm_map_pages(kern_vmm_ctx, aligned_vaddr, physical_addr, 1, flags);
         memcpy((void *)virtual_addr, (char *)raw_elf + prog_hdr->offset + i * PAGE_SIZE, file_size);
-        vmm_unmap_pages(kern_vmm_context, aligned_vaddr, 1);
+        vmm_unmap_pages(kern_vmm_ctx, aligned_vaddr, 1);
+        paging_unmap_addr(kern_paging_ctx, aligned_vaddr);
+        paging_invlpg(virtual_addr);
 
         // Add the same virtual address mapping into the context of the new
         // task.
-        vmm_map_pages(vmm_context, aligned_vaddr, physical_addr, 1, flags);
+        vmm_map_pages(vmm_ctx, aligned_vaddr, physical_addr, 1, flags);
 
         if (file_size < PAGE_SIZE) {
             // If the memory size is greater than the file size of the segment, the
@@ -54,8 +57,8 @@ handle_loadable_segment(vmm_context_t *kern_vmm_context, vmm_context_t *vmm_cont
 }
 
 void
-elf_load(vmm_context_t *kern_vmm_context, vmm_context_t *vmm_context, elf32_hdr_t header,
-         void *raw_elf) {
+elf_load(paging_context_t kern_paging_ctx, vmm_context_t *kern_vmm_ctx, vmm_context_t *vmm_ctx,
+         elf32_hdr_t header, void *raw_elf) {
     for (size_t i = 0; i < header.phnum; ++i) {
         size_t prog_header_offset = header.phoff + i * header.phentsize;
         elf32_prog_hdr_t *prog_hdr = (elf32_prog_hdr_t *)(raw_elf + prog_header_offset);
@@ -65,7 +68,7 @@ elf_load(vmm_context_t *kern_vmm_context, vmm_context_t *vmm_context, elf32_hdr_
                 // Nothing to do.
                 return;
             case ELF_PROG_HDR_TYPE_LOAD:
-                handle_loadable_segment(kern_vmm_context, vmm_context, prog_hdr, raw_elf);
+                handle_loadable_segment(kern_paging_ctx, kern_vmm_ctx, vmm_ctx, prog_hdr, raw_elf);
 
                 break;
             default:

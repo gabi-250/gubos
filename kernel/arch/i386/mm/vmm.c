@@ -9,6 +9,7 @@
 #include <mm/paging.h>
 #include <mm/meminfo.h>
 #include <mm/addr_space.h>
+#include <panic.h>
 
 #define ADDR_SPACE_ENTRIES 6
 

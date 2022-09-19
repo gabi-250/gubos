@@ -66,6 +66,9 @@ void paging_set_page_directory(uint32_t);
 // | address of 4KB page    | ignored  | G | PAT | D | A  | PCT | PWT | U/S | R/W | P |
 void paging_map_virtual_to_physical(paging_context_t, uint32_t, uint32_t, uint32_t);
 
+// Unamp the specified address.
+void paging_unmap_addr(paging_context_t paging_ctx, uint32_t virtual_addr);
+
 // Check whether the specified address is page-aligned.
 bool paging_is_aligned(uint32_t);
 

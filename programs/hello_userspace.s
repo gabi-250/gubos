@@ -1,7 +1,13 @@
+.data
+SYSCALL_NUM:
+.long 0
+
+.text
 .globl _start
 _start:
+    mov $2, SYSCALL_NUM
+    mov SYSCALL_NUM, %eax
     # fork
-    mov $2, %eax
     int $80
     # exit syscall
     #mov $1, %eax

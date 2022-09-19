@@ -43,7 +43,7 @@ init_create_user_task(paging_context_t kern_paging_ctx, vmm_context_t kern_vmm_c
     task->parent = parent;
 
     vmm_context_t vmm_context = vmm_clone_context(kern_vmm_ctx);
-    elf_load(&kern_vmm_ctx, &vmm_context, header, user_elf);
+    elf_load(kern_paging_ctx, &kern_vmm_ctx, &vmm_context, header, user_elf);
 
     for (size_t i = 0; i < USER_STACK_PAGE_COUNT; ++i) {
         uint32_t physical_addr = (uint32_t)pmm_alloc_page();

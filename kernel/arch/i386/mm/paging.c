@@ -100,6 +100,18 @@ paging_map_virtual_to_physical(paging_context_t paging_ctx, uint32_t virtual_add
         page_start_addr | flags;
 }
 
+void
+paging_unmap_addr(paging_context_t paging_ctx, uint32_t virtual_addr) {
+    page_table_t *page_table = paging_ctx.page_tables + PAGE_DIRECTORY_INDEX(virtual_addr);
+    // page_table_addr is 4096 bytes aligned, so no need to clear the
+    // lower 12 bits where the flags go
+    uint32_t page_table_addr = vmm_virtual_to_physical((uint32_t)page_table);
+
+    paging_ctx.page_directory->entries[PAGE_DIRECTORY_INDEX(virtual_addr)] =
+        page_table_addr;
+    page_table->entries[PAGE_TABLE_INDEX(virtual_addr)] = 0;
+}
+
 inline uint32_t
 paging_page_count(uint32_t size) {
     return (size + PAGE_SIZE - 1) / PAGE_SIZE;

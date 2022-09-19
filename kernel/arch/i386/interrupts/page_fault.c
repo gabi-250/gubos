@@ -42,20 +42,16 @@ page_fault_handler(interrupt_state_t *state, uint32_t err_code) {
             PANIC("kernel protection fault");
         }
     } else {
+        uint32_t aligned_vaddr = paging_align_addr(addr);
         // Page not present
-        vmm_allocation_t alloc = vmm_find_allocation(&CURRENT_TASK.task->vmm_context, addr);
+        vmm_allocation_t alloc = vmm_find_allocation(&CURRENT_TASK.task->vmm_context, aligned_vaddr);
 
         ASSERT(alloc.page_count, "invalid VMM state");
 
         uint32_t physical_addr = alloc.physical_addr ? alloc.physical_addr : (uint32_t)pmm_alloc_page();
 
-        uint32_t flags = PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE;
-        if (err_code & PAGING_ERR_CODE_US) {
-            flags |= PAGE_FLAG_USER;
-
-        }
-
-        paging_map_virtual_to_physical(CURRENT_TASK.task->paging_ctx, addr, physical_addr, flags);
-        printk_debug("mapped %#x -> %#x\n", addr, physical_addr);
+        paging_map_virtual_to_physical(CURRENT_TASK.task->paging_ctx, aligned_vaddr, physical_addr,
+                                       alloc.flags);
+        printk_debug("mapped %#x -> %#x (flags=%u)\n", aligned_vaddr, physical_addr, alloc.flags);
     }
 }
