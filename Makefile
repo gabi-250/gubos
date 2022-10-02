@@ -1,8 +1,8 @@
 MEMO                   := memo.bin
-PROJECTS               := drivers kernel
+LIBC                   := libc
+PROJECTS               := drivers kernel $(LIBC)
 PROGRAMS               := programs
-SYSTEM_HEADER_PROJECTS := kernel
-HOST                   := i686-elf
+HOST                   := i386-memo
 HOSTARCH               := i386
 SYSROOT                := $(abspath sysroot)
 AR                     := $(HOST)-ar
@@ -10,6 +10,10 @@ AS                     := $(HOST)-as
 LD                     := $(HOST)-ld
 CC                     := $(HOST)-gcc --sysroot=$(SYSROOT)
 GDB                    := $(HOST)-gdb --sysroot=$(SYSROOT)
+
+PREFIX                 := /usr/
+BOOTDIR                := /boot
+INCLUDEDIR             := $(PREFIX)/include
 
 # Export all variables to make them available to sub-make
 export
@@ -21,6 +25,9 @@ QEMU_FLAGS             := -d int,cpu_reset --no-reboot --no-shutdown
 $(MEMO): $(PROJECTS) $(PROGRAMS)
 	./scripts/build.sh
 
+install-headers:
+	make -C $(LIBC) install-headers
+
 qemu: $(MEMO)
 	qemu-system-i386 -cdrom $(MEMO) $(QEMU_FLAGS)
 
@@ -30,6 +37,7 @@ monitor: $(MEMO)
 debug: $(MEMO)
 	qemu-system-i386 -cdrom $(MEMO) $(QEMU_FLAGS) -s -S &> qemu.log &
 	gdb ./build/boot/memo.kernel -x ./scripts/gdb.txt
+
 fmt:
 	astyle \
 		--break-return-type \

@@ -12,7 +12,7 @@ OBJS                 := pic.o ps2.o
 LIBDRIVERS_OBJS      := $(OBJS:.o=.libdrivers.o)
 BINARIES             :=libdrivers.a
 
-.PHONY: all clean install install-headers install-libs
+.PHONY: all clean install install-libs
 .SUFFIXES: .o .libdrivers.o .c .S
 
 all: $(BINARIES)

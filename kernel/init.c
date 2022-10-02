@@ -26,7 +26,7 @@ task_control_block_t *
 init_create_user_task(paging_context_t kern_paging_ctx, vmm_context_t kern_vmm_ctx,
                       void *user_elf_physical_addr, task_control_block_t *parent) {
     void *user_elf = vmm_map_pages(&kern_vmm_ctx, 0, (uint32_t)user_elf_physical_addr, 1,
-                                   PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE | PAGE_FLAG_USER);
+                                   PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);
 
     elf32_hdr_t header;
     // TODO use the real "file" length.

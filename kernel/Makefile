@@ -1,6 +1,3 @@
-PREFIX                := /usr/local
-BOOTDIR               := /boot
-INCLUDEDIR            := $(PREFIX)/include
 ARCHDIR               := arch/$(HOSTARCH)
 KERNEL_ARCH_CFLAGS    := -mgeneral-regs-only
 KERNEL_ARCH_LDFLAGS   :=
@@ -75,11 +72,7 @@ clean:
 	rm -f $(OBJS) *.o */*.o */*/*.o
 	rm -f $(OBJS:.o=.d) *.d */*.d */*/*.d
 
-install: install-headers install-kernel
-
-install-headers:
-	mkdir -p $(SYSROOT)$(INCLUDEDIR)
-	cp -R include/. $(SYSROOT)$(INCLUDEDIR)/
+install: install-kernel
 
 install-kernel: memo.kernel
 	mkdir -p $(SYSROOT)$(BOOTDIR)
