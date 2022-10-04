@@ -14,6 +14,7 @@ GDB                    := $(HOST)-gdb --sysroot=$(SYSROOT)
 PREFIX                 := /usr/
 BOOTDIR                := /boot
 INCLUDEDIR             := $(PREFIX)/include
+LIBDIR                 := $(PREFIX)/lib
 
 # Export all variables to make them available to sub-make
 export

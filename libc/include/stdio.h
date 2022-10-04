@@ -2,6 +2,7 @@
 #define __STDIO_H__
 
 #include <stdarg.h>
+#include <stddef.h>
 
 #define SEEK_SET 1
 

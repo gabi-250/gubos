@@ -20,5 +20,5 @@ exit(registers_t *regs) {
     uint32_t *ret_addr = (uint32_t *)(regs->ebp + sizeof(uint32_t));
     *ret_addr = (uint32_t)halt;
 
-    printk_debug("task %u exited with status %u\n", pid, regs->eax);
+    printk_debug("task %u exited with status %#x\n", pid, regs->ebx);
 }

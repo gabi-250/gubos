@@ -18,15 +18,9 @@ KERNEL_ARCH_OBJS := $(addsuffix .o, $(basename $(KERNEL_ARCH_SRCS)))
 KERNEL_SRCS := $(wildcard *.c string/*.c syscall/*.c syscall/*.S elf/*.c)
 KERNEL_OBJS := $(addsuffix .o, $(basename $(KERNEL_SRCS)))
 
-OBJS =\
-$(KERNEL_ARCH_OBJS) \
-$(KERNEL_OBJS) \
+OBJS = $(KERNEL_ARCH_OBJS) $(KERNEL_OBJS)
 
-LINK_LIST=\
-$(LDFLAGS) \
-$(KERNEL_ARCH_OBJS) \
-$(KERNEL_OBJS) \
-$(LIBS) \
+LINK_LIST = $(LDFLAGS) $(KERNEL_ARCH_OBJS) $(KERNEL_OBJS) $(LIBS)
 
 .PHONY: all clean install install-headers install-kernel
 .SUFFIXES: .o .c .S

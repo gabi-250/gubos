@@ -1,9 +1,12 @@
 .PHONY: all clean
 
-SRC  = $(wildcard *.s)
-OBJS = $(SRC:.s=.bin)
+SRC  = $(wildcard *.[sc])
+OBJS = $(SRC:.c=.bin) $(SRC:.s=.bin)
 
 all: $(OBJS)
+
+%.bin: %.c
+	$(CC) $< -o $@
 
 %.o: %.s
 	$(AS) $< -o $@
@@ -12,4 +15,4 @@ all: $(OBJS)
 	$(LD) $< -o $@
 
 clean:
-	rm -f $(OBJS)
+	rm -f *.bin

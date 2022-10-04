@@ -1,10 +1,28 @@
+SRCS := $(wildcard *.c *.S **/*.c **/*.S)
+OBJS := $(addsuffix .o, $(basename $(SRCS)))
+LIBC_A := libc.a
 
-.PHONY: all clean install install-headers install-kernel
+CFLAGS = -O0 -g -Wall -Wextra -Werror
 
-install: install-headers
+.PHONY: clean install install-headers
+
+%.o: %.c
+	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS)
+
+%.o: %.S
+	$(AS) $< -o $@
+
+$(LIBC_A): install-headers $(OBJS)
+	$(AR) rcs $(LIBC_A) $(OBJS)
+
+install: $(LIBC_A) install-headers
+	mkdir -p $(SYSROOT)$(LIBDIR)
+	cp $(LIBC_A) $(SYSROOT)$(LIBDIR)
+	cp crt0.o $(SYSROOT)$(LIBDIR)
 
 install-headers:
 	mkdir -p $(SYSROOT)$(INCLUDEDIR)
 	cp -R include/. $(SYSROOT)$(INCLUDEDIR)/
 
 clean:
+	rm -rf $(OBJS) $(LIBC_A)
