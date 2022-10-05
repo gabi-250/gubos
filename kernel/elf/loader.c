@@ -36,9 +36,6 @@ handle_loadable_segment(paging_context_t kern_paging_ctx, vmm_context_t *kern_vm
         // into the newly allocated page.
         vmm_map_pages(kern_vmm_ctx, aligned_vaddr, physical_addr, 1, flags);
         memcpy((void *)virtual_addr, (char *)raw_elf + prog_hdr->offset + i * PAGE_SIZE, file_size);
-        vmm_unmap_pages(kern_vmm_ctx, aligned_vaddr, 1);
-        paging_unmap_addr(kern_paging_ctx, aligned_vaddr);
-        paging_invlpg(virtual_addr);
 
         // Add the same virtual address mapping into the context of the new
         // task.
@@ -53,6 +50,10 @@ handle_loadable_segment(paging_context_t kern_paging_ctx, vmm_context_t *kern_vm
         } else {
             file_size -= PAGE_SIZE;
         }
+
+        vmm_unmap_pages(kern_vmm_ctx, aligned_vaddr, 1);
+        paging_unmap_addr(kern_paging_ctx, aligned_vaddr);
+        paging_invlpg(virtual_addr);
     }
 }
 
