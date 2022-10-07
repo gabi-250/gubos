@@ -24,7 +24,8 @@ read_page_fault_addr() {
 void
 page_fault_handler(interrupt_state_t *state, uint32_t err_code) {
     uint32_t addr = read_page_fault_addr();
-    printk_debug("page fault @ %#x (eflags=%#x, cs=%d, eip=%d, err_code=%d): cause=%s, access=%s, mode=%s\n\t\n",
+    printk_debug("[task %u] page fault @ %#x (eflags=%#x, cs=%d, eip=%d, err_code=%d): cause=%s, access=%s, mode=%s\n\t\n",
+                 CURRENT_TASK.task->pid,
                  addr,
                  state->eflags,
                  state->cs,

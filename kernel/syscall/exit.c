@@ -17,8 +17,5 @@ exit(registers_t *regs) {
     sched_remove(pid);
 
     // TODO: return from the interrupt into the parent task
-    uint32_t *ret_addr = (uint32_t *)(regs->ebp + sizeof(uint32_t));
-    *ret_addr = (uint32_t)halt;
-
     printk_debug("task %u exited with status %#x\n", pid, regs->ebx);
 }

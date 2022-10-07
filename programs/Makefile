@@ -3,10 +3,12 @@
 SRC  = $(wildcard *.[sc])
 OBJS = $(SRC:.c=.bin) $(SRC:.s=.bin)
 
+CFLAGS = -O0 -g -Wall -Wextra -Werror
+
 all: $(OBJS)
 
 %.bin: %.c
-	$(CC) $< -o $@
+	$(CC) $< -o $@ $(CFLAGS)
 
 %.o: %.s
 	$(AS) $< -o $@
