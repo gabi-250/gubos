@@ -21,6 +21,8 @@
 
 #ifndef MULTIBOOT_HEADER
 #define MULTIBOOT_HEADER 1
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 
 #include <stdint.h>
 
@@ -390,5 +392,5 @@ void multiboot_print_info(uint32_t);
 void multiboot_print_memory_map(struct multiboot_tag *, multiboot_memory_map_t *);
 struct multiboot_tag_framebuffer_common *multiboot_framebuffer_info(uint32_t);
 struct multiboot_tag_module *multiboot_get_next_module(struct multiboot_tag **tag);
-
+#pragma GCC diagnostic pop
 #endif /*  ! MULTIBOOT_HEADER */

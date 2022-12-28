@@ -7,7 +7,7 @@
 #define SEEK_SET 1
 
 typedef struct file {
-    /* TODO */
+    int fd;
 } FILE;
 
 extern FILE *stderr;

@@ -72,7 +72,7 @@ kernel_main(kernel_meminfo_t meminfo, multiboot_info_t multiboot_info) {
     printk_debug("Initializing memory manager\n");
     pmm_init(multiboot_info);
     printk_debug("PMM: OK\n");
-    paging_context_t paging_ctx = init_paging(meminfo);
+    paging_context_t paging_ctx = init_paging();
     printk_debug("paging: OK\n");
     kmalloc_init();
     printk_debug("kmalloc: OK\n");

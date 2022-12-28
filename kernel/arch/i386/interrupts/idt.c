@@ -72,13 +72,13 @@ keyboard_irq_handler(interrupt_state_t *) {
 }
 
 static void
-set_idt_gate(uint8_t vector, void *isr, uint8_t flags) {
+set_idt_gate(uint8_t vector, uint32_t isr_addr, uint8_t flags) {
     idt_gate_descriptor_t *gate = &idt_descriptors[vector];
 
-    gate->addr_low = (uint32_t)isr & 0xffff;
+    gate->addr_low = isr_addr & 0xffff;
     gate->segment_selector = GDT_KERNEL_CODE_SEGMENT;
     gate->flags = flags;
-    gate->addr_high = ((uint32_t)isr >> 16) & 0xffff;
+    gate->addr_high = (isr_addr >> 16) & 0xffff;
     gate->reserved = 0;
 }
 
@@ -87,8 +87,8 @@ init_hardware_interrupts() {
     uint8_t flags = IDT_TRAP_GATE_FLAGS | IDT_SEG_PRESENT | IDT_KERNEL_DPL |
                     IDT_32_BIT_GATE_SIZE;
     // Interrupts 32 - 46 are hardware interrupts.
-    set_idt_gate(IDT_RESERVED_INT_COUNT, timer_irq_handler, flags);
-    set_idt_gate(IDT_RESERVED_INT_COUNT + 1, keyboard_irq_handler, flags);
+    set_idt_gate(IDT_RESERVED_INT_COUNT, (uint32_t)timer_irq_handler, flags);
+    set_idt_gate(IDT_RESERVED_INT_COUNT + 1, (uint32_t)keyboard_irq_handler, flags);
     pic_init();
     pic_clear_mask(PIC_IRQ0);
     pic_clear_mask(PIC_IRQ1);
@@ -103,32 +103,32 @@ idt_init() {
     uint8_t flags = IDT_TRAP_GATE_FLAGS | IDT_SEG_PRESENT | IDT_KERNEL_DPL |
                     IDT_32_BIT_GATE_SIZE;
 
-    set_idt_gate(INT_DIVIDE_ERROR_EXCEPTION, divide_error_exception_handler, flags);
-    set_idt_gate(INT_DEBUG_EXCEPTION, debug_exception_handler, flags);
-    set_idt_gate(INT_NMI_INTERRUPT, nmi_interrupt_handler, flags);
-    set_idt_gate(INT_BREAKPOINT_EXCEPTION, breakpoint_exception_handler, flags);
-    set_idt_gate(INT_OVERFLOW_EXCEPTION, overflow_exception_handler, flags);
-    set_idt_gate(INT_BOUND_RANGE_EXCEEDED_EXCEPTION, bound_range_exceeded_exception_handler,
+    set_idt_gate(INT_DIVIDE_ERROR_EXCEPTION, (uint32_t)divide_error_exception_handler, flags);
+    set_idt_gate(INT_DEBUG_EXCEPTION, (uint32_t)debug_exception_handler, flags);
+    set_idt_gate(INT_NMI_INTERRUPT, (uint32_t)nmi_interrupt_handler, flags);
+    set_idt_gate(INT_BREAKPOINT_EXCEPTION, (uint32_t)breakpoint_exception_handler, flags);
+    set_idt_gate(INT_OVERFLOW_EXCEPTION, (uint32_t)overflow_exception_handler, flags);
+    set_idt_gate(INT_BOUND_RANGE_EXCEEDED_EXCEPTION, (uint32_t)bound_range_exceeded_exception_handler,
                  flags);
-    set_idt_gate(INT_INVALID_OPCODE_EXCEPTION, invalid_opcode_exception_handler, flags);
-    set_idt_gate(INT_DEVICE_NOT_AVAILABLE_EXCEPTION, device_not_available_exception_handler,
+    set_idt_gate(INT_INVALID_OPCODE_EXCEPTION, (uint32_t)invalid_opcode_exception_handler, flags);
+    set_idt_gate(INT_DEVICE_NOT_AVAILABLE_EXCEPTION, (uint32_t)device_not_available_exception_handler,
                  flags);
-    set_idt_gate(INT_DOUBLE_FAULT_EXCEPTION, double_fault_exception_handler, flags);
-    set_idt_gate(INT_COPROCESSOR_SEGMENT_OVERRUN, coprocessor_segment_overrun_handler, flags);
-    set_idt_gate(INT_INVALID_TSS_EXCEPTION, invalid_tss_exception_handler, flags);
-    set_idt_gate(INT_SEGMENT_NOT_PRESENT, segment_not_present_handler, flags);
-    set_idt_gate(INT_STACK_FAULT_EXCEPTION, stack_fault_exception_handler, flags);
-    set_idt_gate(INT_GENERAL_PROTECTION_EXCEPTION, general_protection_exception_handler,
+    set_idt_gate(INT_DOUBLE_FAULT_EXCEPTION, (uint32_t)double_fault_exception_handler, flags);
+    set_idt_gate(INT_COPROCESSOR_SEGMENT_OVERRUN, (uint32_t)coprocessor_segment_overrun_handler, flags);
+    set_idt_gate(INT_INVALID_TSS_EXCEPTION, (uint32_t)invalid_tss_exception_handler, flags);
+    set_idt_gate(INT_SEGMENT_NOT_PRESENT, (uint32_t)segment_not_present_handler, flags);
+    set_idt_gate(INT_STACK_FAULT_EXCEPTION, (uint32_t)stack_fault_exception_handler, flags);
+    set_idt_gate(INT_GENERAL_PROTECTION_EXCEPTION, (uint32_t)general_protection_exception_handler,
                  flags);
-    set_idt_gate(INT_PAGE_FAULT_EXCEPTION, page_fault_exception_handler, flags);
-    set_idt_gate(INT_X87_FPU_FLOATING_POINT_ERROR, x87_fpu_floating_point_error_handler,
+    set_idt_gate(INT_PAGE_FAULT_EXCEPTION, (uint32_t)page_fault_exception_handler, flags);
+    set_idt_gate(INT_X87_FPU_FLOATING_POINT_ERROR, (uint32_t)x87_fpu_floating_point_error_handler,
                  flags);
-    set_idt_gate(INT_ALIGNMENT_CHECK_EXCEPTION, alignment_check_exception_handler, flags);
-    set_idt_gate(INT_MACHINE_CHECK_EXCEPTION, machine_check_exception_handler, flags);
-    set_idt_gate(INT_SIMD_FLOATING_POINT_EXCEPTION, simd_floating_point_exception_handler,
+    set_idt_gate(INT_ALIGNMENT_CHECK_EXCEPTION, (uint32_t)alignment_check_exception_handler, flags);
+    set_idt_gate(INT_MACHINE_CHECK_EXCEPTION, (uint32_t)machine_check_exception_handler, flags);
+    set_idt_gate(INT_SIMD_FLOATING_POINT_EXCEPTION, (uint32_t)simd_floating_point_exception_handler,
                  flags);
-    set_idt_gate(INT_VIRTUALIZATION_EXCEPTION, virtualization_exception_handler, flags);
-    set_idt_gate(INT_CONTROL_PROTECTION_EXCEPTION, control_protection_exception_handler,
+    set_idt_gate(INT_VIRTUALIZATION_EXCEPTION, (uint32_t)virtualization_exception_handler, flags);
+    set_idt_gate(INT_CONTROL_PROTECTION_EXCEPTION, (uint32_t)control_protection_exception_handler,
                  flags);
 
     init_hardware_interrupts();
@@ -136,13 +136,13 @@ idt_init() {
     flags = IDT_INT_GATE_FLAGS | IDT_SEG_PRESENT | IDT_USER_DPL | IDT_32_BIT_GATE_SIZE;
     // The rest are user-defined interrupts
     for (uint16_t i = IDT_RESERVED_INT_COUNT + 2; i < IDT_SYSCALL_INT; ++i) {
-        set_idt_gate(i, default_exception_handler, flags);
+        set_idt_gate(i, (uint32_t)default_exception_handler, flags);
     }
 
-    set_idt_gate(IDT_SYSCALL_INT, syscall_interrupt_handler, flags);
+    set_idt_gate(IDT_SYSCALL_INT, (uint32_t)syscall_interrupt_handler, flags);
 
     for (uint16_t i = IDT_SYSCALL_INT + 1; i < IDT_GATE_DESCRIPTOR_COUNT; ++i) {
-        set_idt_gate(i, default_exception_handler, flags);
+        set_idt_gate(i, (uint32_t)default_exception_handler, flags);
     }
     // Load the IDT register and enable interrupts
     asm volatile("lidt %0\n\t"

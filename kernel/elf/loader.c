@@ -62,7 +62,7 @@ elf_load(paging_context_t kern_paging_ctx, vmm_context_t *kern_vmm_ctx, vmm_cont
          elf32_hdr_t header, void *raw_elf) {
     for (size_t i = 0; i < header.phnum; ++i) {
         size_t prog_header_offset = header.phoff + i * header.phentsize;
-        elf32_prog_hdr_t *prog_hdr = (elf32_prog_hdr_t *)(raw_elf + prog_header_offset);
+        elf32_prog_hdr_t *prog_hdr = (elf32_prog_hdr_t *)((char *)raw_elf + prog_header_offset);
 
         switch (prog_hdr->type) {
             case ELF_PROG_HDR_TYPE_NULL:

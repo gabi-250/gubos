@@ -6,7 +6,7 @@ MEMOINCLUDE          :=\
 -Iinclude\
 -I../kernel/include\
 
-CFLAGS               := -O2 -g -ffreestanding -Wall -Wextra -Werror $(MEMOINCLUDE)
+CFLAGS               := -O2 -g -ffreestanding -std=gnu2x -Wall -Wextra -Werror -pedantic $(MEMOINCLUDE)
 LIBDRIVERS_CFLAGS    := $(CFLAGS)
 OBJS                 := pic.o ps2.o
 LIBDRIVERS_OBJS      := $(OBJS:.o=.libdrivers.o)
@@ -21,13 +21,13 @@ libdrivers.a: $(LIBDRIVERS_OBJS)
 	$(AR) rcs $@ $(LIBDRIVERS_OBJS)
 
 %.o: %.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -MD -c $< -o $@ -std=gnu11
+	$(CC) $(CFLAGS) $(LDFLAGS) -MD -c $< -o $@
 
 %.o: %.S
 	$(CC) $(LDFLAGS) -MD -c $< -o $@ $(CFLAGS)
 
 %.libdrivers.o: %.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -MD -c $< -o $@ -std=gnu11
+	$(CC) $(CFLAGS) $(LDFLAGS) -MD -c $< -o $@
 
 %.libdrivers.o: %.S
 	$(CC) $(CFLAGS) $(LDFLAGS) -MD -c $< -o $@

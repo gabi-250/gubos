@@ -3,7 +3,7 @@ KERNEL_ARCH_CFLAGS    := -mgeneral-regs-only
 KERNEL_ARCH_LDFLAGS   :=
 KERNEL_ARCH_LIBS      :=
 LIBS                  := -ldrivers -nostdlib -lgcc
-CFLAGS                = $(MEMOINCLUDE) $(KERNEL_ARCH_CFLAGS) -O0 -g -D__is_kernel -ffreestanding -Wall -Wextra -Werror
+CFLAGS                = $(MEMOINCLUDE) $(KERNEL_ARCH_CFLAGS) -O0 -g -D__is_kernel -ffreestanding -std=gnu2x -Wall -Wextra -Werror -pedantic
 LDFLAGS               =
 
 MEMOINCLUDE :=\
@@ -35,28 +35,28 @@ $(ARCHDIR)/crtbegin.o $(ARCHDIR)/crtend.o:
 	OBJ=`$(CC) $(CFLAGS) $(LDFLAGS) -print-file-name=$(@F)` && cp "$$OBJ" $@
 
 %.o: %.c
-	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS)
+	$(CC) -MD -c $< -o $@ $(CFLAGS)
 
 %.o: %.S
 	$(CC) -MD -c $< -o $@ $(CFLAGS)
 
 string/%.o: string/%.c
-	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS)
+	$(CC) -MD -c $< -o $@ $(CFLAGS)
 
 $(ARCHDIR)/%.o: $(ARCHDIR)/%.c
-	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS)
+	$(CC) -MD -c $< -o $@ $(CFLAGS)
 
 $(ARCHDIR)/%.o: $(ARCHDIR)/%.S
 	$(CC) -MD -c $< -o $@ $(CFLAGS)
 
 $(ARCHDIR)/mm/%.o: $(ARCHDIR)/mm/%.c
-	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS)
+	$(CC) -MD -c $< -o $@ $(CFLAGS)
 
 $(ARCHDIR)/mm/%.o: $(ARCHDIR)/mm/%.S
 	$(CC) -MD -c $< -o $@ $(CFLAGS)
 
 $(ARCHDIR)/interrupts/%.o: $(ARCHDIR)/interrupts/%.c
-	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS)
+	$(CC) -MD -c $< -o $@ $(CFLAGS)
 
 $(ARCHDIR)/interrupts/%.o: $(ARCHDIR)/interrupts/%.S
 	$(CC) -MD -c $< -o $@ $(CFLAGS)
