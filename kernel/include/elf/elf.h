@@ -46,7 +46,7 @@
 #define ELF_PARSE_ERR_INV_MACHINE 7
 #define ELF_PARSE_ERR_INV_VERSION 8
 
-// Program headers
+// Program header types
 
 // An ignored entry.
 #define ELF_PROG_HDR_TYPE_NULL 0

@@ -4,13 +4,12 @@ LIBC_A := libc.a
 
 CFLAGS = -O0 -g -Wall -Wextra -Werror
 
-.PHONY: clean install install-headers
+.PHONY: all clean install install-headers
+
+all: $(LIBC_A)
 
 %.o: %.c
-	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS)
-
-%.o: %.S
-	$(AS) $< -o $@
+	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS) -Iinclude
 
 $(LIBC_A): install-headers $(OBJS)
 	$(AR) rcs $(LIBC_A) $(OBJS)
