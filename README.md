@@ -1,6 +1,3 @@
 # memo
 
-## Running in QEMU
-
-Make sure the cross-compiler is in your `PATH`, then run `make qemu` to start
-memo in QEMU.
+## :headstone: This repository has been moved to `codeberg.org/gabi-250` :headstone:
